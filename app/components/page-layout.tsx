@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 interface Tab {
@@ -14,7 +14,7 @@ interface PageLayoutProps {
     tabs: Tab[];
 }
 
-export function PageLayout({ title, tabs }: PageLayoutProps) {
+function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -63,5 +63,13 @@ export function PageLayout({ title, tabs }: PageLayoutProps) {
                 </div>
             </div>
         </div>
+    )
+}
+
+export function PageLayout({ title, tabs }: PageLayoutProps) {
+    return (
+        <Suspense fallback={<div className="h-screen flex items-center justify-center bg-slate-900 text-slate-400">Loading...</div>}>
+            <PageLayoutContent title={title} tabs={tabs} />
+        </Suspense>
     )
 }
