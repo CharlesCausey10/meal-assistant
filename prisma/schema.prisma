@@ -1,0 +1,33 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Protein {
+  CHICKEN_BREAST
+  CHICKEN_THIGHS
+  GROUND_BEEF
+  PORK_BUTT
+  FISH
+}
+
+enum Category {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+  DESSERT
+}
+
+model Meal {
+  id        Int      @id @default(autoincrement())
+  name      String
+  protein   Protein?
+  category  Category
+  notes     String?
+  createdAt DateTime @default(now())
+}
