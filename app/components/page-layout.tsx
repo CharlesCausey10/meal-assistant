@@ -1,6 +1,7 @@
 'use client'
 
-import { ReactNode, useState } from 'react'
+import { ReactNode } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 interface Tab {
     id: string;
@@ -14,12 +15,26 @@ interface PageLayoutProps {
 }
 
 export function PageLayout({ title, tabs }: PageLayoutProps) {
-    const [activeTab, setActiveTab] = useState(tabs[0]?.id || '')
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const tabFromUrl = searchParams.get('tab')
+    const activeTab = tabs.some(tab => tab.id === tabFromUrl) ? tabFromUrl! : (tabs[0]?.id || '')
 
     const activeTabContent = tabs.find(tab => tab.id === activeTab)?.content
 
+    const handleTabChange = (tabId: string) => {
+        if (tabId === activeTab) return
+
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('tab', tabId)
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
     return (
         <div className="h-screen flex flex-col bg-slate-900">
+            <h1 className="sr-only">{title}</h1>
             <div className="flex-shrink-0 border-b border-purple-500/30">
                 <div className="max-w-7xl mx-auto">
                     {/* Tab Navigation */}
@@ -27,7 +42,7 @@ export function PageLayout({ title, tabs }: PageLayoutProps) {
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => handleTabChange(tab.id)}
                                 className={`px-4 py-2 font-medium transition-colors ${
                                     activeTab === tab.id
                                         ? 'text-purple-400 border-b-2 border-purple-500'

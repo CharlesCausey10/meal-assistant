@@ -62,8 +62,7 @@ export function Filters() {
     }
 
     return (
-        <div className="bg-slate-800 p-4 rounded-xl border border-purple-500/30">
-            <h2 className="text-sm font-semibold text-purple-200 mb-3">Filters</h2>
+        <div>
             <div className="mb-3">
                 <div className="flex gap-2">
                     <button

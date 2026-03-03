@@ -5,7 +5,7 @@ import { PageLayout } from './components/page-layout'
 export default async function Home({
     searchParams,
 }: {
-    searchParams: Promise<{ protein?: string; category?: string; search?: string }>
+    searchParams: Promise<{ protein?: string; category?: string; search?: string; tab?: string }>
 }) {
     const tabs = [
         {

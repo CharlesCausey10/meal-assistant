@@ -12,7 +12,7 @@ export const PROTEIN_EXPIRATION_DAYS: Record<string, number> = {
 }
 
 export function getExpirationDate(cookedAt: Date, protein: Protein | null): Date {
-  const days = protein ? PROTEIN_EXPIRATION_DAYS[protein] || 3 : 3
+  const days = protein ? PROTEIN_EXPIRATION_DAYS[protein] || 7 : 7 // Default to 7 days if no protein
   const expirationDate = new Date(cookedAt)
   expirationDate.setDate(expirationDate.getDate() + days)
   return expirationDate

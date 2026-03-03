@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { deleteMeal, updateMeal } from './actions'
 import { PreferenceInput } from './components/preference-input'
 import { MealLogForm } from './components/meal-log-form'
+import { ResponsiveModal } from './components/responsive-modal'
 import type { Meal } from '@prisma/client'
 
 export function MealList({ meals }: { meals: Meal[] }) {
@@ -80,7 +81,7 @@ export function MealList({ meals }: { meals: Meal[] }) {
                             <div className="flex gap-2">
                                 <button 
                                     type="submit"
-                                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                    className="bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                                 >
                                     Save
                                 </button>
@@ -139,29 +140,13 @@ export function MealList({ meals }: { meals: Meal[] }) {
             ))}
         </ul>
 
-        {/* Log Meal Modal */}
-        {loggingMealId !== null && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                <div className="bg-slate-900 rounded-xl shadow-2xl border border-purple-500/30 p-6 max-w-md w-full mx-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-semibold text-slate-100">Log Cooked Meal</h3>
-                        <button 
-                            onClick={() => setLoggingMealId(null)}
-                            className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                    <MealLogForm 
-                        defaultName={meals.find(m => m.id === loggingMealId)?.name || ''}
-                        defaultProtein={meals.find(m => m.id === loggingMealId)?.protein || ''}
-                        onSuccess={() => setLoggingMealId(null)}
-                    />
-                </div>
-            </div>
-        )}
+        <ResponsiveModal title="Log Cooked Meal" isOpen={loggingMealId !== null} onClose={() => setLoggingMealId(null)}>
+            <MealLogForm
+                defaultName={meals.find(m => m.id === loggingMealId)?.name || ''}
+                defaultProtein={meals.find(m => m.id === loggingMealId)?.protein || ''}
+                onSuccess={() => setLoggingMealId(null)}
+            />
+        </ResponsiveModal>
         </>
     )
 }

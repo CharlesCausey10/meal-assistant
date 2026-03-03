@@ -14,11 +14,7 @@ function getProteinEmoji(protein: string | null) {
         'FISH': '🐟',
         'EGGS': '🥚'
     }
-    return protein ? emojiMap[protein] || '' : ''
-}
-
-function formatProtein(protein: string) {
-    return protein.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+    return protein ? emojiMap[protein] || '🍴' : '🍴'
 }
 
 function getDaysSinceCooking(cookedAt: Date): number {
@@ -88,9 +84,11 @@ export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
                                 }`}
                             >
                                 <div>
-                                    <div className="font-semibold text-slate-100 text-lg">{meal.name}</div>
+                                    <div className="font-semibold text-slate-100 text-lg flex items-center gap-2">
+                                        <span>{getProteinEmoji(meal.protein)}</span>
+                                        <span>{meal.name}</span>
+                                    </div>
                                     <div className="text-sm text-slate-300">
-                                        {meal.protein && <span>{getProteinEmoji(meal.protein)} {formatProtein(meal.protein)} • </span>}
                                         <span className="text-slate-400">{daysSince} day{daysSince !== 1 ? 's' : ''} ago</span>
                                     </div>
                                 </div>

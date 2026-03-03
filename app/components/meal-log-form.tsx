@@ -2,6 +2,7 @@
 
 import { logMeal } from '@/app/actions-meal-log'
 import { FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface MealLogFormProps {
     defaultName?: string
@@ -10,6 +11,7 @@ interface MealLogFormProps {
 }
 
 export function MealLogForm({ defaultName = '', defaultProtein = '', onSuccess }: MealLogFormProps) {
+    const router = useRouter()
     const today = new Date().toISOString().split('T')[0]
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -17,6 +19,7 @@ export function MealLogForm({ defaultName = '', defaultProtein = '', onSuccess }
         const form = e.currentTarget
         const formData = new FormData(form)
         await logMeal(formData)
+        router.refresh()
         if (onSuccess) {
             onSuccess()
         }
