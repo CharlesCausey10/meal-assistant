@@ -5,6 +5,7 @@ import { deleteMeal, updateMeal } from './actions'
 import { PreferenceInput } from './components/preference-input'
 import { MealLogForm } from './components/meal-log-form'
 import { ResponsiveModal } from './components/responsive-modal'
+import { CookingAnimation } from './components/cooking-animation'
 import type { Meal } from '@prisma/client'
 
 export function MealList({ meals }: { meals: Meal[] }) {
@@ -98,11 +99,11 @@ export function MealList({ meals }: { meals: Meal[] }) {
                         <div className="flex justify-between items-center w-full gap-2">
                             <button 
                                     onClick={() => setLoggingMealId(meal.id)}
-                                    className="text-xl hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+                                    className="group text-xl hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
                                     aria-label="Log this meal as cooked"
                                     title="Cook"
                                 >
-                                    🍳
+                                    <CookingAnimation hoverOnly />
                                 </button>
                             <div className="flex-1">
                                 <div className="font-semibold text-slate-100 text-lg">{meal.name}</div>
@@ -140,7 +141,7 @@ export function MealList({ meals }: { meals: Meal[] }) {
             ))}
         </ul>
 
-        <ResponsiveModal title="Log Cooked Meal" isOpen={loggingMealId !== null} onClose={() => setLoggingMealId(null)}>
+        <ResponsiveModal title="Cook Meal" isOpen={loggingMealId !== null} onClose={() => setLoggingMealId(null)}>
             <MealLogForm
                 defaultName={meals.find(m => m.id === loggingMealId)?.name || ''}
                 defaultProtein={meals.find(m => m.id === loggingMealId)?.protein || ''}

@@ -3,6 +3,7 @@
 import { logMeal } from '@/app/actions-meal-log'
 import { FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { CookingAnimation } from './cooking-animation'
 
 interface MealLogFormProps {
     defaultName?: string
@@ -18,8 +19,10 @@ export function MealLogForm({ defaultName = '', defaultProtein = '', onSuccess }
         e.preventDefault()
         const form = e.currentTarget
         const formData = new FormData(form)
+        
         await logMeal(formData)
         router.refresh()
+        
         if (onSuccess) {
             onSuccess()
         }
@@ -59,8 +62,11 @@ export function MealLogForm({ defaultName = '', defaultProtein = '', onSuccess }
                     required 
                 />
             </div>
-            <button type="submit" className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/50 w-full">
-                Log Meal
+            <button type="submit" className="bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-md hover:shadow-purple-500/20 w-full">
+                <span className="inline-flex items-center justify-center gap-2">
+                    <CookingAnimation />
+                    <span className="font-semibold">COOK</span>
+                </span>
             </button>
         </form>
     )

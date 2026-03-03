@@ -1,7 +1,29 @@
 @import "tailwindcss";
 
-html {
-  scrollbar-gutter: stable;
+/* Custom scrollbar styling */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6b21a8 #1e293b;
+}
+
+/* Chrome, Safari, Edge */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6b21a8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7e22ce;
 }
 
 :root {
@@ -27,4 +49,95 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+button {
+  cursor: pointer;
+}
+
+.cooking-animation {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.3rem;
+}
+
+.cook-pan {
+  display: inline-block;
+  transform-origin: 60% 70%;
+  animation: pan-bounce 1.2s ease-in-out infinite;
+}
+
+.cook-steam {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  font-size: 0.7rem;
+}
+
+.steam-1 {
+  left: -0.1rem;
+  top: -0.55rem;
+  animation: steam-rise 1.6s ease-out infinite;
+}
+
+.steam-2 {
+  right: -0.15rem;
+  top: -0.65rem;
+  animation: steam-rise 1.6s ease-out 0.55s infinite;
+}
+
+.cooking-animation--hover .cook-pan {
+  animation: none;
+  transform: translateY(0) rotate(0deg);
+}
+
+.cooking-animation--hover .steam-1,
+.cooking-animation--hover .steam-2 {
+  animation: none;
+  opacity: 0;
+}
+
+.group:hover .cooking-animation--hover .cook-pan {
+  animation: pan-bounce 1.2s ease-in-out infinite;
+}
+
+.group:hover .cooking-animation--hover .steam-1 {
+  animation: steam-rise 1.6s ease-out infinite;
+}
+
+.group:hover .cooking-animation--hover .steam-2 {
+  animation: steam-rise 1.6s ease-out 0.55s infinite;
+}
+
+@keyframes pan-bounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-1px) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(0) rotate(3deg);
+  }
+  75% {
+    transform: translateY(-1px) rotate(-2deg);
+  }
+}
+
+@keyframes steam-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(3px) scale(0.9);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(1.15);
+  }
 }

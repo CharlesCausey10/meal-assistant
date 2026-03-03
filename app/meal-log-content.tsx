@@ -24,7 +24,7 @@ export function MealLogContent({ mealLogs }: { mealLogs: MealLog[] }) {
             <div className="hidden md:block w-120 shrink-0 overflow-y-auto">
                 <div className="space-y-4 p-4">
                     <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-purple-500/30">
-                        <h2 className="text-lg font-semibold text-purple-200 mb-3">Log Cooked Meal</h2>
+                        <h2 className="text-lg font-semibold text-purple-200 mb-3">Cook Meal</h2>
                         <MealLogForm />
                     </div>
                 </div>
@@ -36,7 +36,7 @@ export function MealLogContent({ mealLogs }: { mealLogs: MealLog[] }) {
                 </div>
             </div>
 
-            <ResponsiveModal title="Log Cooked Meal" isOpen={isNewLogOpen} onClose={() => setIsNewLogOpen(false)}>
+            <ResponsiveModal title="Cook Meal" isOpen={isNewLogOpen} onClose={() => setIsNewLogOpen(false)}>
                 <MealLogForm onSuccess={() => setIsNewLogOpen(false)} />
             </ResponsiveModal>
         </div>

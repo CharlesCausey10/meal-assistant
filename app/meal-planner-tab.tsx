@@ -17,7 +17,7 @@ export async function MealPlannerTab({
         where: {
             ...(proteins && proteins.length > 0 && { protein: { in: proteins } }),
             ...(categories && categories.length > 0 && { category: { in: categories } }),
-            ...(params.search && { name: { contains: params.search } }),
+            ...(params.search && { name: { contains: params.search, mode: 'insensitive' } }),
         },
         orderBy: [
             { preference: 'desc' },
