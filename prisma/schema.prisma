@@ -10,24 +10,36 @@ datasource db {
 enum Protein {
   CHICKEN_BREAST
   CHICKEN_THIGHS
+  ROTISSERIE_CHICKEN
   GROUND_BEEF
   PORK_BUTT
   FISH
+  EGGS
 }
 
 enum Category {
   BREAKFAST
   LUNCH
   DINNER
+  SIDE_STARTER
   SNACK
   DESSERT
 }
 
 model Meal {
+  id         Int      @id @default(autoincrement())
+  name       String
+  protein    Protein?
+  category   Category
+  preference Int?
+  notes      String?
+  createdAt  DateTime @default(now())
+}
+
+model MealLog {
   id        Int      @id @default(autoincrement())
   name      String
   protein   Protein?
-  category  Category
-  notes     String?
+  cookedAt  DateTime
   createdAt DateTime @default(now())
 }
