@@ -3,7 +3,16 @@
 import { createMeal } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { PreferenceInput } from './preference-input'
-import { FormEvent } from 'react'
+import { IngredientInput } from './ingredient-input'
+import { FormEvent, useState } from 'react'
+
+interface IngredientWithQuantity {
+    id: number
+    name: string
+    category: string
+    quantity: number
+    unit: string
+}
 
 interface MealFormProps {
     onSuccess?: () => void
@@ -11,11 +20,15 @@ interface MealFormProps {
 
 export function MealForm({ onSuccess }: MealFormProps) {
     const router = useRouter()
+    const [ingredients, setIngredients] = useState<IngredientWithQuantity[]>([])
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         const form = e.currentTarget
         const formData = new FormData(form)
+        
+        // Add ingredients as JSON
+        formData.append('ingredients', JSON.stringify(ingredients))
         
         await createMeal(formData)
         router.refresh()
@@ -23,6 +36,7 @@ export function MealForm({ onSuccess }: MealFormProps) {
         
         // Reset form
         form.reset()
+        setIngredients([])
     }
 
     return (
@@ -50,6 +64,7 @@ export function MealForm({ onSuccess }: MealFormProps) {
                 </select>
                 <PreferenceInput padSize="md" />
             </div>
+            <IngredientInput onIngredientsChange={setIngredients} />
             <button type="submit" className="bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/20 w-full">
                 Add Meal
             </button>

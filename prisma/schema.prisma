@@ -26,14 +26,46 @@ enum Category {
   DESSERT
 }
 
+enum IngredientCategory {
+  PRODUCE
+  MEAT
+  DAIRY
+  FROZEN
+  PANTRY
+  SPICES
+  OTHER
+}
+
 model Meal {
-  id         Int      @id @default(autoincrement())
-  name       String
-  protein    Protein?
-  category   Category
-  preference Int?
-  notes      String?
-  createdAt  DateTime @default(now())
+  id          Int              @id @default(autoincrement())
+  name        String
+  protein     Protein?
+  category    Category
+  preference  Int?
+  notes       String?
+  ingredients MealIngredient[]
+  createdAt   DateTime         @default(now())
+}
+
+model Ingredient {
+  id            Int              @id @default(autoincrement())
+  name          String           @unique
+  category      IngredientCategory
+  mealUses      MealIngredient[]
+  createdAt     DateTime         @default(now())
+}
+
+model MealIngredient {
+  id           Int        @id @default(autoincrement())
+  mealId       Int
+  meal         Meal       @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  ingredientId Int
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  quantity     Decimal
+  unit         String
+  createdAt    DateTime   @default(now())
+
+  @@unique([mealId, ingredientId])
 }
 
 model MealLog {

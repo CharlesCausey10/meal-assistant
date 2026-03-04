@@ -19,6 +19,13 @@ export async function MealPlannerTab({
             ...(categories && categories.length > 0 && { category: { in: categories } }),
             ...(params.search && { name: { contains: params.search, mode: 'insensitive' } }),
         },
+        include: {
+            ingredients: {
+                include: {
+                    ingredient: true,
+                }
+            }
+        },
         orderBy: [
             { preference: 'desc' },
             { createdAt: 'desc' }

@@ -1,13 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import type { Meal } from '@prisma/client'
+import type { Meal, MealIngredient, Ingredient } from '@prisma/client'
 import { Filters } from './filters'
 import { MealList } from './meal-list'
 import { MealForm } from './components/meal-form'
 import { ResponsiveModal } from './components/responsive-modal'
 
-export function MealPlannerContent({ meals }: { meals: Meal[] }) {
+type MealWithIngredients = Meal & {
+    ingredients: Array<MealIngredient & { ingredient: Ingredient }>
+}
+
+export function MealPlannerContent({ meals }: { meals: MealWithIngredients[] }) {
     const [isNewMealOpen, setIsNewMealOpen] = useState(false)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 

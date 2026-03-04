@@ -35,7 +35,7 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     return (
         <div className="h-screen flex flex-col bg-slate-900">
             <h1 className="sr-only">{title}</h1>
-            <div className="flex-shrink-0 border-b border-purple-500/30">
+            <div className="shrink-0 border-b border-purple-500/30">
                 <div className="max-w-7xl mx-auto">
                     {/* Tab Navigation */}
                     <div className="flex gap-4 pb-0">

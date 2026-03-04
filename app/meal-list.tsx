@@ -3,14 +3,26 @@
 import { useState } from 'react'
 import { deleteMeal, updateMeal } from './actions'
 import { PreferenceInput } from './components/preference-input'
+import { IngredientInput } from './components/ingredient-input'
 import { MealLogForm } from './components/meal-log-form'
 import { ResponsiveModal } from './components/responsive-modal'
 import { CookingAnimation } from './components/cooking-animation'
-import type { Meal } from '@prisma/client'
+import type { Meal, MealIngredient, Ingredient } from '@prisma/client'
 
-export function MealList({ meals }: { meals: Meal[] }) {
+type MealWithIngredients = Meal & {
+    ingredients: Array<MealIngredient & { ingredient: Ingredient }>
+}
+
+interface IngredientWithQuantity extends Ingredient {
+    quantity: number
+    unit: string
+}
+
+export function MealList({ meals }: { meals: MealWithIngredients[] }) {
     const [editingId, setEditingId] = useState<number | null>(null)
     const [loggingMealId, setLoggingMealId] = useState<number | null>(null)
+    const [editingIngredients, setEditingIngredients] = useState<IngredientWithQuantity[]>([])
+
 
     const getProteinEmoji = (protein: string) => {
         const emojiMap: Record<string, string> = {
@@ -40,7 +52,16 @@ export function MealList({ meals }: { meals: Meal[] }) {
                 {meals.map(meal => (
                 <li key={meal.id} className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 p-4 rounded-xl hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-500/40 transition-all">
                     {editingId === meal.id ? (
-                        <form action={updateMeal} onSubmit={() => setEditingId(null)} className="space-y-3">
+                        <form onSubmit={(e) => {
+                            e.preventDefault()
+                            const form = e.currentTarget
+                            const formData = new FormData(form)
+                            formData.append('ingredients', JSON.stringify(editingIngredients))
+                            updateMeal(formData).then(() => {
+                                setEditingId(null)
+                                setEditingIngredients([])
+                            })
+                        }} className="space-y-3">
                             <input type="hidden" name="id" value={meal.id} />
                             <input 
                                 name="name" 
@@ -79,6 +100,14 @@ export function MealList({ meals }: { meals: Meal[] }) {
                                 </select>
                                 <PreferenceInput defaultValue={meal.preference || ''} padSize="sm" />
                             </div>
+                            <IngredientInput 
+                                onIngredientsChange={setEditingIngredients}
+                                initialIngredients={meal.ingredients.map(ing => ({
+                                    ingredient: ing.ingredient,
+                                    quantity: Number(ing.quantity),
+                                    unit: ing.unit,
+                                }))}
+                            />
                             <div className="flex gap-2">
                                 <button 
                                     type="submit"
@@ -88,7 +117,10 @@ export function MealList({ meals }: { meals: Meal[] }) {
                                 </button>
                                 <button 
                                     type="button"
-                                    onClick={() => setEditingId(null)}
+                                    onClick={() => {
+                                        setEditingId(null)
+                                        setEditingIngredients([])
+                                    }}
                                     className="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-all"
                                 >
                                     Cancel
@@ -111,10 +143,24 @@ export function MealList({ meals }: { meals: Meal[] }) {
                                     {meal.protein ? getProteinEmoji(meal.protein) + ' ' + formatProtein(meal.protein) + ' • ' : ''}{formatCategory(meal.category)}
                                     {meal.preference && <span className="ml-2 text-xs text-slate-400">({meal.preference}/10)</span>}
                                 </div>
+                                {meal.ingredients.length > 0 && (
+                                    <div className="text-xs text-slate-400 mt-2 space-y-1">
+                                        {meal.ingredients.map(ing => (
+                                            <div key={ing.id}>{String(ing.quantity)} {ing.unit} {ing.ingredient.name}</div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="flex gap-2">
                                 <button 
-                                    onClick={() => setEditingId(meal.id)}
+                                    onClick={() => {
+                                        setEditingId(meal.id)
+                                        setEditingIngredients(meal.ingredients.map(ing => ({
+                                            ...ing.ingredient,
+                                            quantity: Number(ing.quantity),
+                                            unit: ing.unit,
+                                        })))
+                                    }}
                                     className="text-purple-400 hover:text-purple-300 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
                                     aria-label="Edit meal"
                                 >
