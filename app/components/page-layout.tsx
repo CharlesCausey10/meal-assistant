@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, Suspense } from 'react'
+import { ReactNode, Suspense, useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 interface Tab {
@@ -14,13 +14,57 @@ interface PageLayoutProps {
     tabs: Tab[];
 }
 
+const LAST_TAB_STORAGE_KEY = 'meal-planner:last-tab'
+
 function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    const [savedTab, setSavedTab] = useState<string | null>(null)
+    const [storageChecked, setStorageChecked] = useState(false)
+
+    useEffect(() => {
+        try {
+            setSavedTab(window.localStorage.getItem(LAST_TAB_STORAGE_KEY))
+        } catch {
+            setSavedTab(null)
+        } finally {
+            setStorageChecked(true)
+        }
+    }, [])
 
     const tabFromUrl = searchParams.get('tab')
-    const activeTab = tabs.some(tab => tab.id === tabFromUrl) ? tabFromUrl! : (tabs[0]?.id || '')
+    const hasValidTabFromUrl = tabs.some(tab => tab.id === tabFromUrl)
+    const hasValidSavedTab = savedTab !== null && tabs.some(tab => tab.id === savedTab)
+
+    const activeTab = hasValidTabFromUrl
+        ? tabFromUrl!
+        : hasValidSavedTab
+            ? savedTab!
+            : (tabs[0]?.id || '')
+
+    useEffect(() => {
+        if (!storageChecked || hasValidTabFromUrl || !activeTab) {
+            return
+        }
+
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('tab', activeTab)
+
+        router.replace(`${pathname}?${params.toString()}`)
+    }, [activeTab, hasValidTabFromUrl, pathname, router, searchParams, storageChecked])
+
+    useEffect(() => {
+        if (!storageChecked || !activeTab) {
+            return
+        }
+
+        try {
+            window.localStorage.setItem(LAST_TAB_STORAGE_KEY, activeTab)
+        } catch {
+            // Ignore write errors (e.g. blocked storage).
+        }
+    }, [activeTab, storageChecked])
 
     const activeTabContent = tabs.find(tab => tab.id === activeTab)?.content
 

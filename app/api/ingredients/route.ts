@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         })
 
         return Response.json(ingredient)
-    } catch (error) {
+    } catch {
         return Response.json({ error: 'Failed to create ingredient' }, { status: 500 })
     }
 }

@@ -1,0 +1,59 @@
+Grocery List Feature Plan (Condensed)
+
+Goal
+- Add a Grocery tab that generates and manages shopping lists from saved meals and ingredients.
+
+Phase 1 (MVP)
+1. Add a new "Grocery" tab in app/page.tsx.
+2. Add Prisma models:
+   - GroceryList
+   - GroceryListMeal (source meals for traceability)
+   - GroceryListItem (checkable/editable items)
+3. Create server actions in app/actions-grocery.ts:
+   - create list
+   - generate list from selected meal IDs
+   - toggle item checked
+   - update item qty/unit/note
+   - add manual item
+   - delete item
+   - delete list
+4. Build Grocery UI:
+   - create list / generate from meals
+   - list view grouped by ingredient category
+   - checkbox + inline edits
+   - manual add item
+   - optional hide checked toggle
+
+Generation Rules
+- Read MealIngredient rows for selected meals.
+- Aggregate only when ingredient AND unit match.
+- Sum quantity for exact matches.
+- Keep separate lines for same ingredient with different units.
+- Use ingredient category + a name snapshot per list item.
+
+Key Product Decisions (MVP)
+- ingredientId optional so manual non-ingredient items are allowed.
+- nameSnapshot stored so list labels stay stable if ingredient names change later.
+- Generated lists are not auto-synced after meal edits (add regenerate later if needed).
+
+Implementation Order
+1. Prisma schema update + migration.
+2. Server actions.
+3. GroceryTab base screen + list CRUD.
+4. "Generate from meals" flow.
+5. Item toggles/edit/manual add.
+6. UX polish and sorting.
+
+Testing Checklist
+- Aggregates same ingredient+unit correctly.
+- Keeps separate rows for differing units.
+- Manual item works without ingredientId.
+- Checkbox state persists.
+- Deleting a list cascades item deletion.
+
+V2 (Later)
+- Pantry/inventory subtraction.
+- Unit normalization/conversion.
+- Store/aisle mapping.
+- Per-serving scaling.
+- Regenerate + diff workflows.
