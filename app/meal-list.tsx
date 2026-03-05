@@ -22,6 +22,7 @@ export function MealList({ meals }: { meals: MealWithIngredients[] }) {
     const [editingId, setEditingId] = useState<number | null>(null)
     const [loggingMealId, setLoggingMealId] = useState<number | null>(null)
     const [editingIngredients, setEditingIngredients] = useState<IngredientWithQuantity[]>([])
+    const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set())
 
 
     const getProteinEmoji = (protein: string) => {
@@ -69,6 +70,13 @@ export function MealList({ meals }: { meals: MealWithIngredients[] }) {
                                 placeholder="Meal name"
                                 className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm"
                                 required
+                            />
+                            <input 
+                                name="recipeUrl" 
+                                defaultValue={meal.recipeUrl || ''}
+                                placeholder="Recipe URL (optional)"
+                                type="url"
+                                className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm"
                             />
                             <div className="grid grid-cols-3 gap-2">
                                 <select 
@@ -144,10 +152,29 @@ export function MealList({ meals }: { meals: MealWithIngredients[] }) {
                                     {meal.preference && <span className="ml-2 text-xs text-slate-400">({meal.preference}/10)</span>}
                                 </div>
                                 {meal.ingredients.length > 0 && (
-                                    <div className="text-xs text-slate-400 mt-2 space-y-1">
-                                        {meal.ingredients.map(ing => (
-                                            <div key={ing.id}>{String(ing.quantity)} {ing.unit} {ing.ingredient.name}</div>
-                                        ))}
+                                    <div className="text-xs text-slate-400 mt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newExpanded = new Set(expandedIngredients)
+                                                if (newExpanded.has(meal.id)) {
+                                                    newExpanded.delete(meal.id)
+                                                } else {
+                                                    newExpanded.add(meal.id)
+                                                }
+                                                setExpandedIngredients(newExpanded)
+                                            }}
+                                            className="text-purple-400 hover:text-purple-300 hover:underline font-medium py-2 px-3 md:py-0 md:px-0 hover:bg-slate-700/50 md:hover:bg-transparent rounded-lg md:rounded-none transition-colors"
+                                        >
+                                            {expandedIngredients.has(meal.id) ? '▼' : '▶'} {meal.ingredients.length} ingredient{meal.ingredients.length !== 1 ? 's' : ''}
+                                        </button>
+                                        {expandedIngredients.has(meal.id) && (
+                                            <div className="space-y-1 mt-2 pl-4">
+                                                {meal.ingredients.map(ing => (
+                                                    <div key={ing.id}>{String(ing.quantity)} {ing.unit} {ing.ingredient.name}</div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

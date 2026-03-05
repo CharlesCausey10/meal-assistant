@@ -9,6 +9,7 @@ export async function createMeal(formData: FormData) {
     const proteinValue = formData.get('protein') as string
     const category = formData.get('category') as Category
     const preferenceValue = formData.get('preference') as string
+    const recipeUrl = formData.get('recipeUrl') as string
     const ingredientsJson = formData.get('ingredients') as string
 
     if (!name || !category) return
@@ -38,6 +39,7 @@ export async function createMeal(formData: FormData) {
             protein: proteinValue ? (proteinValue as Protein) : null,
             category,
             preference,
+            recipeUrl: recipeUrl || null,
             ingredients: {
                 create: ingredients.map(ing => ({
                     ingredientId: ing.id,
@@ -69,6 +71,7 @@ export async function updateMeal(formData: FormData) {
     const proteinValue = formData.get('protein') as string
     const category = formData.get('category') as Category
     const preferenceValue = formData.get('preference') as string
+    const recipeUrl = formData.get('recipeUrl') as string
     const ingredientsJson = formData.get('ingredients') as string
 
     if (!id || !name || !category) return
@@ -99,6 +102,7 @@ export async function updateMeal(formData: FormData) {
             protein: proteinValue ? (proteinValue as Protein) : null,
             category,
             preference,
+            recipeUrl: recipeUrl || null,
             ingredients: {
                 // Delete existing ingredients
                 deleteMany: {},

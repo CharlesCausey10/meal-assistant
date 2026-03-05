@@ -41,9 +41,10 @@ export function MealForm({ onSuccess }: MealFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-3">
-            <input name="name" placeholder="Meal name" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-3 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500" required />
+            <input name="name" placeholder="Meal name" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500" required />
+            <input name="recipeUrl" placeholder="Recipe URL (optional)" type="url" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <select name="protein" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-3 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100">
+                <select name="protein" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100">
                     <option value="">Protein (optional)</option>
                     <option value="CHICKEN_BREAST">🐔 Chicken Breast</option>
                     <option value="CHICKEN_THIGHS">🐔 Chicken Thighs</option>
@@ -53,7 +54,7 @@ export function MealForm({ onSuccess }: MealFormProps) {
                     <option value="FISH">🐟 Fish</option>
                     <option value="EGGS">🥚 Eggs</option>
                 </select>
-                <select name="category" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-3 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100" required defaultValue="">
+                <select name="category" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100" required defaultValue="">
                     <option value="" disabled>Select category</option>
                     <option value="BREAKFAST">Breakfast</option>
                     <option value="LUNCH">Lunch</option>

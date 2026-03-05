@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { Protein, Category } from '@prisma/client'
 import { MealPlannerContent } from './meal-planner-content'
+import { serializeMeals } from './utils/convert-prisma'
 
 export async function MealPlannerTab({
     searchParams,
@@ -37,5 +38,8 @@ export async function MealPlannerTab({
         ],
     })
 
-    return <MealPlannerContent meals={meals} />
+    // Convert Decimal quantities to numbers for safe serialization to Client Component
+    const serializedMeals = serializeMeals(meals)
+
+    return <MealPlannerContent meals={serializedMeals} />
 }

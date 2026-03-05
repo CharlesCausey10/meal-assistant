@@ -15,7 +15,7 @@ export default async function Home({
         },
         {
             id: 'logs',
-            label: '📅 Meal Log',
+            label: '📅 Log',
             content: <MealLogTab />,
         },
     ]

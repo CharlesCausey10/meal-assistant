@@ -16,7 +16,7 @@ export function PreferenceInput({
     padSize = 'md'
 }: PreferenceInputProps) {
     const baseClass = 'border border-slate-600 focus:border-purple-400 focus:outline-none w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500';
-    const padding = padSize === 'sm' ? 'p-2 text-sm' : 'p-3';
+    const padding = padSize === 'sm' ? 'p-2 text-sm' : 'p-2';
     const defaultClass = `${baseClass} ${padding}`;
 
     return (

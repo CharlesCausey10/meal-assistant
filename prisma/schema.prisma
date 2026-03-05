@@ -50,6 +50,7 @@ model Meal {
     category    Category
     preference  Int?
     notes       String?
+    recipeUrl   String?
     ingredients MealIngredient[]
     createdAt   DateTime         @default(now())
 }
