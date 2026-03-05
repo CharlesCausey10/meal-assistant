@@ -7,6 +7,7 @@ export async function GET() {
         })
         return Response.json(ingredients)
     } catch (error) {
+        console.error('Failed to fetch ingredients:', error)
         return Response.json({ error: 'Failed to fetch ingredients' }, { status: 500 })
     }
 }

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Ingredient } from '@prisma/client'
+import { ResponsiveModal } from './responsive-modal'
 
 interface IngredientWithQuantity extends Ingredient {
     quantity: number
@@ -26,10 +27,16 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
         }))
     )
     const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([])
-    const [newIngredientName, setNewIngredientName] = useState('')
+    const [searchInput, setSearchInput] = useState('')
+    const [selectedIngredientId, setSelectedIngredientId] = useState<number | null>(null)
+    const [isOpen, setIsOpen] = useState(false)
     const [newQuantity, setNewQuantity] = useState('')
     const [newUnit, setNewUnit] = useState('cup')
-    const [newCategory, setNewCategory] = useState('PRODUCE')
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [newIngredientName, setNewIngredientName] = useState('')
+    const [newIngredientCategory, setNewIngredientCategory] = useState<string>('PRODUCE')
+    const [isCreatingIngredient, setIsCreatingIngredient] = useState(false)
 
     useEffect(() => {
         // Fetch available ingredients
@@ -43,57 +50,85 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
         onIngredientsChange(ingredients)
     }, [ingredients, onIngredientsChange])
 
-    const handleAddIngredient = async () => {
-        if (!newIngredientName || !newQuantity) return
-
-        let ingredient = availableIngredients.find(i => i.name.toLowerCase() === newIngredientName.toLowerCase())
-
-        // Create new ingredient if it doesn't exist
-        if (!ingredient) {
-            try {
-                const res = await fetch('/api/ingredients', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: newIngredientName,
-                        category: newCategory,
-                    }),
-                })
-                const newIngredient = await res.json()
-                if (newIngredient) {
-                    ingredient = newIngredient
-                    setAvailableIngredients([...availableIngredients, newIngredient])
-                }
-            } catch (err) {
-                console.error('Failed to create ingredient:', err)
-                return
+    useEffect(() => {
+        // Close dropdown when clicking outside
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setIsOpen(false)
             }
         }
 
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    const filteredIngredients = availableIngredients.filter(ing =>
+        ing.name.toLowerCase().includes(searchInput.toLowerCase()) &&
+        !ingredients.some(selected => selected.id === ing.id)
+    )
+
+    const handleSelectIngredient = (ingredient: Ingredient) => {
+        setSelectedIngredientId(ingredient.id)
+        setSearchInput(ingredient.name)
+        setIsOpen(false)
+    }
+
+    const handleAddIngredient = () => {
+        if (!selectedIngredientId || !newQuantity) return
+
+        const ingredient = availableIngredients.find(i => i.id === selectedIngredientId)
+        if (!ingredient) return
+
         // Add to meal's ingredients
-        if (ingredient) {
-            setIngredients([
-                ...ingredients,
-                {
-                    id: ingredient.id,
-                    name: ingredient.name,
-                    category: ingredient.category,
-                    createdAt: ingredient.createdAt,
-                    quantity: parseFloat(newQuantity),
-                    unit: newUnit,
-                }
-            ])
-        }
+        setIngredients([
+            ...ingredients,
+            {
+                id: ingredient.id,
+                name: ingredient.name,
+                category: ingredient.category,
+                createdAt: ingredient.createdAt,
+                quantity: parseFloat(newQuantity),
+                unit: newUnit,
+            }
+        ])
 
         // Reset form
-        setNewIngredientName('')
+        setSearchInput('')
+        setSelectedIngredientId(null)
         setNewQuantity('')
         setNewUnit('cup')
-        setNewCategory('PRODUCE')
     }
 
     const handleRemoveIngredient = (id: number) => {
         setIngredients(ingredients.filter(ing => ing.id !== id))
+    }
+
+    const handleCreateIngredient = async () => {
+        if (!newIngredientName.trim() || !newIngredientCategory) return
+
+        setIsCreatingIngredient(true)
+        try {
+            const response = await fetch('/api/ingredients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newIngredientName, category: newIngredientCategory })
+            })
+
+            if (!response.ok) throw new Error('Failed to create ingredient')
+
+            const newIngredient = await response.json()
+            setAvailableIngredients([...availableIngredients, newIngredient].sort((a, b) => a.name.localeCompare(b.name)))
+            
+            // Auto-select the new ingredient
+            handleSelectIngredient(newIngredient)
+            setIsModalOpen(false)
+            setNewIngredientName('')
+            setNewIngredientCategory('PRODUCE')
+        } catch (err) {
+            console.error('Failed to create ingredient:', err)
+        } finally {
+            setIsCreatingIngredient(false)
+        }
     }
 
     const commonUnits = ['tsp', 'tbsp', 'cup', 'oz', 'lb', 'g', 'ml', 'l', 'whole', 'piece']
@@ -123,19 +158,43 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
             {/* Add ingredient form */}
             <div className="space-y-2">
                 <div className="flex gap-2">
-                    <input
-                        type="text"
-                        placeholder="Ingredient name"
-                        value={newIngredientName}
-                        onChange={(e) => setNewIngredientName(e.target.value)}
-                        list="ingredientNames"
-                        className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100 placeholder-slate-500"
-                    />
-                    <datalist id="ingredientNames">
-                        {availableIngredients.map(ing => (
-                            <option key={ing.id} value={ing.name} />
-                        ))}
-                    </datalist>
+                    <div className="relative flex-1" ref={dropdownRef}>
+                        <input
+                            type="text"
+                            placeholder="Search ingredients..."
+                            value={searchInput}
+                            onChange={(e) => {
+                                setSearchInput(e.target.value)
+                                setSelectedIngredientId(null)
+                                setIsOpen(true)
+                            }}
+                            onFocus={() => setIsOpen(true)}
+                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                        />
+                        
+                        {isOpen && filteredIngredients.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded shadow-lg z-10 max-h-48 overflow-y-auto">
+                                {filteredIngredients.map(ing => (
+                                    <button
+                                        key={ing.id}
+                                        type="button"
+                                        onClick={() => handleSelectIngredient(ing)}
+                                        className="w-full text-left px-3 py-2 hover:bg-slate-700 text-slate-100 text-sm transition-colors"
+                                    >
+                                        {ing.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setIsModalOpen(true)}
+                        className="bg-slate-700 hover:bg-slate-600 text-slate-100 px-3 py-2 rounded text-sm font-medium transition-colors"
+                        title="Add new ingredient"
+                    >
+                        +
+                    </button>
                     <input
                         type="number"
                         placeholder="Qty"
@@ -155,22 +214,6 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                     </select>
                 </div>
 
-                {/* Category selector for new ingredients */}
-                {!availableIngredients.find(i => i.name.toLowerCase() === newIngredientName.toLowerCase()) && newIngredientName && (
-                    <select
-                        value={newCategory}
-                        onChange={(e) => setNewCategory(e.target.value as 'PRODUCE' | 'PROTEIN' | 'DAIRY' | 'PANTRY' | 'SPICES' | 'OTHER')}
-                        className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
-                    >
-                        <option value="PRODUCE">Produce</option>
-                        <option value="PROTEIN">Protein</option>
-                        <option value="DAIRY">Dairy</option>
-                        <option value="PANTRY">Pantry</option>
-                        <option value="SPICES">Spices</option>
-                        <option value="OTHER">Other</option>
-                    </select>
-                )}
-
                 <button
                     type="button"
                     onClick={handleAddIngredient}
@@ -179,6 +222,58 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                     Add Ingredient
                 </button>
             </div>
+
+            <ResponsiveModal title="Add New Ingredient" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                <div className="space-y-3">
+                    <div>
+                        <label htmlFor="ingredient-name" className="block text-sm font-medium text-slate-200 mb-1">
+                            Ingredient Name
+                        </label>
+                        <input
+                            id="ingredient-name"
+                            type="text"
+                            placeholder="e.g., Broccoli"
+                            value={newIngredientName}
+                            onChange={(e) => setNewIngredientName(e.target.value)}
+                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="ingredient-category" className="block text-sm font-medium text-slate-200 mb-1">
+                            Category
+                        </label>
+                        <select
+                            id="ingredient-category"
+                            value={newIngredientCategory}
+                            onChange={(e) => setNewIngredientCategory(e.target.value)}
+                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                        >
+                            <option value="PRODUCE">Produce</option>
+                            <option value="MEAT">Meat</option>
+                            <option value="SEAFOOD">Seafood</option>
+                            <option value="DAIRY">Dairy</option>
+                            <option value="GRAINS_BREAD">Grains & Bread</option>
+                            <option value="NUTS_SEEDS">Nuts & Seeds</option>
+                            <option value="BAKING">Baking</option>
+                            <option value="OILS_VINEGARS">Oils & Vinegars</option>
+                            <option value="CONDIMENTS">Condiments</option>
+                            <option value="CANNED_GOODS">Canned Goods</option>
+                            <option value="FROZEN">Frozen</option>
+                            <option value="SPICES_HERBS">Spices & Herbs</option>
+                            <option value="SWEETS">Sweets</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleCreateIngredient}
+                        disabled={!newIngredientName.trim() || isCreatingIngredient}
+                        className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-slate-100 px-3 py-2 rounded text-sm font-medium transition-colors"
+                    >
+                        {isCreatingIngredient ? 'Creating...' : 'Create Ingredient'}
+                    </button>
+                </div>
+            </ResponsiveModal>
         </div>
     )
 }

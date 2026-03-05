@@ -82,7 +82,85 @@ export function Filters() {
                     />
                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Mobile: Button/Pill Layout */}
+            <div className="md:hidden space-y-3">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        {searchParams.get('protein') && (
+                            <button
+                                onClick={clearProtein}
+                                className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-md py-1 px-2 transition-colors text-xs"
+                                aria-label="Clear proteins"
+                            >
+                                ✕
+                            </button>
+                        )}
+                        <h3 className="text-xs py-1 font-medium text-purple-300">Proteins</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { value: 'CHICKEN_BREAST', label: '🐔 Chicken Breast' },
+                            { value: 'CHICKEN_THIGHS', label: '🐔 Chicken Thighs' },
+                            { value: 'ROTISSERIE_CHICKEN', label: '🐔 Rotisserie Chicken' },
+                            { value: 'GROUND_BEEF', label: '🐄 Ground Beef' },
+                            { value: 'PORK_BUTT', label: '🐷 Pork Butt' },
+                            { value: 'FISH', label: '🐟 Fish' },
+                            { value: 'EGGS', label: '🥚 Eggs' },
+                        ].map(({ value, label }) => (
+                            <button
+                                key={value}
+                                onClick={() => handleCheckboxChange('protein', value, !isChecked('protein', value))}
+                                className={`px-3 py-2 rounded-full text-base font-medium transition-all ${
+                                    isChecked('protein', value)
+                                        ? 'bg-purple-500 text-white border border-purple-400'
+                                        : 'bg-slate-700 text-slate-200 border border-slate-600 hover:border-purple-400'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        {searchParams.get('category') && (
+                            <button
+                                onClick={clearCategory}
+                                className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-md py-1 px-2 transition-colors text-xs"
+                                aria-label="Clear categories"
+                            >
+                                ✕
+                            </button>
+                        )}
+                        <h3 className="text-xs py-1 font-medium text-purple-300">Categories</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { value: 'BREAKFAST', label: 'Breakfast' },
+                            { value: 'LUNCH', label: 'Lunch' },
+                            { value: 'DINNER', label: 'Dinner' },
+                            { value: 'SIDE_STARTER', label: 'Side/Starter' },
+                            { value: 'SNACK', label: 'Snack' },
+                            { value: 'DESSERT', label: 'Dessert' },
+                        ].map(({ value, label }) => (
+                            <button
+                                key={value}
+                                onClick={() => handleCheckboxChange('category', value, !isChecked('category', value))}
+                                className={`px-3 py-2 rounded-full text-base font-medium transition-all ${
+                                    isChecked('category', value)
+                                        ? 'bg-purple-500 text-white border border-purple-400'
+                                        : 'bg-slate-700 text-slate-200 border border-slate-600 hover:border-purple-400'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop: Checkbox Layout */}
+            <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         {searchParams.get('protein') && (
@@ -106,7 +184,7 @@ export function Filters() {
                             { value: 'FISH', label: '🐟 Fish' },
                             { value: 'EGGS', label: '🥚 Eggs' },
                         ].map(({ value, label }) => (
-                            <label key={value} className="flex items-center gap-2 text-sm text-slate-200 hover:text-purple-200 cursor-pointer">
+                            <label key={value} className="flex items-center gap-2 text-base text-slate-200 hover:text-purple-200 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={isChecked('protein', value)}
@@ -140,7 +218,7 @@ export function Filters() {
                             { value: 'SNACK', label: 'Snack' },
                             { value: 'DESSERT', label: 'Dessert' },
                         ].map(({ value, label }) => (
-                            <label key={value} className="flex items-center gap-2 text-sm text-slate-200 hover:text-purple-200 cursor-pointer">
+                            <label key={value} className="flex items-center gap-2 text-base text-slate-200 hover:text-purple-200 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={isChecked('category', value)}

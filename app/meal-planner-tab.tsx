@@ -15,7 +15,12 @@ export async function MealPlannerTab({
 
     const meals = await prisma.meal.findMany({
         where: {
-            ...(proteins && proteins.length > 0 && { protein: { in: proteins } }),
+            ...(proteins && proteins.length > 0 && {
+                OR: [
+                    { protein: { in: proteins } },
+                    { protein: null },
+                ],
+            }),
             ...(categories && categories.length > 0 && { category: { in: categories } }),
             ...(params.search && { name: { contains: params.search, mode: 'insensitive' } }),
         },
