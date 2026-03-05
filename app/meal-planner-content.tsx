@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { Meal, MealIngredient, Ingredient } from '@prisma/client'
 import { Filters } from './filters'
 import { MealList } from './meal-list'
@@ -12,19 +13,67 @@ type MealWithIngredients = Meal & {
 }
 
 export function MealPlannerContent({ meals }: { meals: MealWithIngredients[] }) {
+    const router = useRouter()
+    const searchParams = useSearchParams()
     const [isNewMealOpen, setIsNewMealOpen] = useState(false)
-    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+    const [mobileSearchValue, setMobileSearchValue] = useState(searchParams.get('search') || '')
+    const [, startTransition] = useTransition()
+
+    const updateUrlAndRefresh = useCallback((params: URLSearchParams, mode: 'push' | 'replace' = 'push') => {
+        const nextQuery = params.toString()
+        const nextUrl = nextQuery ? `?${nextQuery}` : window.location.pathname
+
+        if (mode === 'push') {
+            window.history.pushState(null, '', nextUrl)
+        } else {
+            window.history.replaceState(null, '', nextUrl)
+        }
+
+        startTransition(() => {
+            router.refresh()
+        })
+    }, [router, startTransition])
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const params = new URLSearchParams(window.location.search)
+            const currentSearch = params.get('search') || ''
+
+            if (mobileSearchValue === currentSearch) {
+                return
+            }
+
+            if (mobileSearchValue === '') {
+                params.delete('search')
+            } else {
+                params.set('search', mobileSearchValue)
+            }
+
+            updateUrlAndRefresh(params, 'replace')
+        }, 300)
+
+        return () => clearTimeout(timer)
+    }, [mobileSearchValue, updateUrlAndRefresh])
 
     return (
         <div className="h-full flex flex-col md:flex-row">
             <div className="md:hidden p-3 border-b border-purple-500/20 flex gap-2">
                 <button
                     type="button"
-                    onClick={() => setIsFiltersOpen(true)}
-                    className="flex-1 bg-slate-800 border border-purple-500/30 text-slate-100 px-4 py-2 rounded-lg font-medium"
+                    disabled={!mobileSearchValue}
+                    onClick={() => setMobileSearchValue('')}
+                    className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg p-2 transition-colors disabled:text-slate-600 disabled:hover:bg-transparent"
+                    aria-label="Clear search"
                 >
-                    Filters
+                    ✕
                 </button>
+                <input
+                    type="text"
+                    placeholder="Search meals..."
+                    value={mobileSearchValue}
+                    onChange={(e) => setMobileSearchValue(e.target.value)}
+                    className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm placeholder-slate-400"
+                />
                 <button
                     type="button"
                     onClick={() => setIsNewMealOpen(true)}
@@ -52,10 +101,6 @@ export function MealPlannerContent({ meals }: { meals: MealWithIngredients[] }) 
 
             <ResponsiveModal title="Add New Meal" isOpen={isNewMealOpen} onClose={() => setIsNewMealOpen(false)}>
                 <MealForm onSuccess={() => setIsNewMealOpen(false)} />
-            </ResponsiveModal>
-
-            <ResponsiveModal title="Filters" isOpen={isFiltersOpen} onClose={() => setIsFiltersOpen(false)}>
-                <Filters />
             </ResponsiveModal>
         </div>
     )

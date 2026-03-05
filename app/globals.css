@@ -26,6 +26,18 @@
   background: #7e22ce;
 }
 
+/* Utility: hide scrollbars on specific scroll containers while keeping scroll enabled */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

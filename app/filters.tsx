@@ -105,7 +105,7 @@ export function Filters() {
 
     return (
         <div>
-            <div className="mb-3">
+            <div className="hidden md:block mb-3">
                 <div className="flex gap-2">
                     <button
                         disabled={!searchValue}
@@ -124,30 +124,17 @@ export function Filters() {
                     />
                 </div>
             </div>
-            {/* Mobile: Button/Pill Layout */}
-            <div className="md:hidden space-y-3">
-                <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        {selectedProteins.length > 0 && (
-                            <button
-                                onClick={clearProtein}
-                                className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-md py-1 px-2 transition-colors text-xs"
-                                aria-label="Clear proteins"
-                            >
-                                ✕
-                            </button>
-                        )}
-                        <h3 className="text-xs py-1 font-medium text-purple-300">Proteins</h3>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2">
+            {/* Mobile: Compact pill rows */}
+            <div className="md:hidden space-y-2">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Protein filters">
                         {[
+                            { value: 'EGGS', label: '🥚 Eggs' },
                             { value: 'CHICKEN_BREAST', label: '🐔 Chicken Breast' },
                             { value: 'CHICKEN_THIGHS', label: '🐔 Chicken Thighs' },
                             { value: 'ROTISSERIE_CHICKEN', label: '🐔 Rotisserie Chicken' },
                             { value: 'GROUND_BEEF', label: '🐄 Ground Beef' },
                             { value: 'PORK_BUTT', label: '🐷 Pork Butt' },
                             { value: 'FISH', label: '🐟 Fish' },
-                            { value: 'EGGS', label: '🥚 Eggs' },
                         ].map(({ value, label }) => (
                             <button
                                 key={value}
@@ -161,22 +148,8 @@ export function Filters() {
                                 {label}
                             </button>
                         ))}
-                    </div>
                 </div>
-                <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        {selectedCategories.length > 0 && (
-                            <button
-                                onClick={clearCategory}
-                                className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-md py-1 px-2 transition-colors text-xs"
-                                aria-label="Clear categories"
-                            >
-                                ✕
-                            </button>
-                        )}
-                        <h3 className="text-xs py-1 font-medium text-purple-300">Categories</h3>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Category filters">
                         {[
                             { value: 'BREAKFAST', label: 'Breakfast' },
                             { value: 'LUNCH', label: 'Lunch' },
@@ -197,7 +170,6 @@ export function Filters() {
                                 {label}
                             </button>
                         ))}
-                    </div>
                 </div>
             </div>
 
