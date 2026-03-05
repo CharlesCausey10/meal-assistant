@@ -2,17 +2,13 @@
 
 import { useState, useEffect, useTransition, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import type { Meal, MealIngredient, Ingredient } from '@prisma/client'
+import type { SerializedMealWithIngredients } from './utils/convert-prisma'
 import { Filters } from './filters'
 import { MealList } from './meal-list'
 import { MealForm } from './components/meal-form'
 import { ResponsiveModal } from './components/responsive-modal'
 
-type MealWithIngredients = Meal & {
-    ingredients: Array<MealIngredient & { ingredient: Ingredient }>
-}
-
-export function MealPlannerContent({ meals }: { meals: MealWithIngredients[] }) {
+export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredients[] }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [isNewMealOpen, setIsNewMealOpen] = useState(false)

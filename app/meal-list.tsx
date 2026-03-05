@@ -7,18 +7,15 @@ import { IngredientInput } from './components/ingredient-input'
 import { MealLogForm } from './components/meal-log-form'
 import { ResponsiveModal } from './components/responsive-modal'
 import { CookingAnimation } from './components/cooking-animation'
-import type { Meal, MealIngredient, Ingredient } from '@prisma/client'
-
-type MealWithIngredients = Meal & {
-    ingredients: Array<MealIngredient & { ingredient: Ingredient }>
-}
+import type { Ingredient } from '@prisma/client'
+import type { SerializedMealWithIngredients } from './utils/convert-prisma'
 
 interface IngredientWithQuantity extends Ingredient {
     quantity: number
     unit: string
 }
 
-export function MealList({ meals }: { meals: MealWithIngredients[] }) {
+export function MealList({ meals }: { meals: SerializedMealWithIngredients[] }) {
     const [editingId, setEditingId] = useState<number | null>(null)
     const [loggingMealId, setLoggingMealId] = useState<number | null>(null)
     const [editingIngredients, setEditingIngredients] = useState<IngredientWithQuantity[]>([])
