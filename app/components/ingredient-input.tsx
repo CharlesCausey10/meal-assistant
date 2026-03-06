@@ -131,7 +131,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
         }
     }
 
-    const commonUnits = ['whole', 'piece', 'tsp', 'tbsp', 'cup', 'oz', 'lb', 'g', 'ml', 'l']
+    const commonUnits = ['whole', 'piece', 'tsp', 'tbsp', 'cup', 'oz', 'lb', 'stick', 'pack']
 
     return (
         <div className="space-y-3 border border-slate-600 p-4 rounded-lg bg-slate-900/50">

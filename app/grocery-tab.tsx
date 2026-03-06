@@ -56,7 +56,6 @@ export async function GroceryTab({
                 },
                 items: {
                     orderBy: [
-                        { isChecked: 'asc' },
                         { category: 'asc' },
                         { sortOrder: 'asc' },
                         { createdAt: 'asc' },

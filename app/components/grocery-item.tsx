@@ -20,9 +20,10 @@ type GroceryItemProps = {
         isChecked: boolean
     }
     ingredientCategories: IngredientCategory[]
+    hideAmounts?: boolean
 }
 
-export function GroceryItem({ item, ingredientCategories }: GroceryItemProps) {
+export function GroceryItem({ item, ingredientCategories, hideAmounts = false }: GroceryItemProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [isChecked, setIsChecked] = useState(item.isChecked)
 
@@ -50,30 +51,35 @@ export function GroceryItem({ item, ingredientCategories }: GroceryItemProps) {
             <li className="bg-slate-900/60 border border-slate-700 rounded-lg p-2">
                 <div className="flex items-center gap-2">
                     <button
+                        type="button"
                         onClick={handleToggle}
-                        className={`h-7 w-7 rounded border text-sm shrink-0 ${
-                            isChecked
-                                ? 'bg-green-600/30 border-green-400 text-green-300'
-                                : 'bg-slate-800 border-slate-500 text-slate-300'
-                        }`}
+                        className="flex-1 min-w-0 text-left flex items-center gap-2 rounded px-1 py-1 hover:bg-slate-800/40 transition-colors"
                         aria-label={isChecked ? 'Mark as not bought' : 'Mark as bought'}
                     >
-                        {isChecked ? '✓' : ' '}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                        <div
-                            className={`font-medium ${
-                                isChecked ? 'line-through text-slate-500' : 'text-slate-100'
+                        <span
+                            className={`h-7 w-7 rounded border text-sm shrink-0 inline-flex items-center justify-center ${
+                                isChecked
+                                    ? 'bg-green-600/30 border-green-400 text-green-300'
+                                    : 'bg-slate-800 border-slate-500 text-slate-300'
                             }`}
                         >
-                            {item.quantity !== null ? `${String(item.quantity)} ` : ''}
-                            {item.unit ? `${item.unit} ` : ''}
-                            {item.nameSnapshot}
-                        </div>
-                        {item.note && (
-                            <div className="text-xs text-slate-400 mt-0.5">{item.note}</div>
-                        )}
-                    </div>
+                            {isChecked ? '✓' : ' '}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                            <span
+                                className={`font-medium block ${
+                                    isChecked ? 'line-through text-slate-500' : 'text-slate-100'
+                                }`}
+                            >
+                                {!hideAmounts && item.quantity !== null ? `${String(item.quantity)} ` : ''}
+                                {!hideAmounts && item.unit ? `${item.unit} ` : ''}
+                                {item.nameSnapshot}
+                            </span>
+                            {item.note && (
+                                <span className="text-xs text-slate-400 mt-0.5 block">{item.note}</span>
+                            )}
+                        </span>
+                    </button>
                     <button
                         onClick={() => setIsEditing(true)}
                         className="text-purple-400 hover:text-purple-300 hover:bg-slate-700/50 rounded px-2.5 py-0.5 text-sm transition-colors shrink-0"
@@ -90,25 +96,30 @@ export function GroceryItem({ item, ingredientCategories }: GroceryItemProps) {
         <li className="bg-slate-900/60 border border-purple-500/40 rounded-lg p-2.5 space-y-2">
             <div className="flex items-center gap-2">
                 <button
+                    type="button"
                     onClick={handleToggle}
-                    className={`h-7 w-7 rounded border text-sm ${
-                        isChecked
-                            ? 'bg-green-600/30 border-green-400 text-green-300'
-                            : 'bg-slate-800 border-slate-500 text-slate-300'
-                    }`}
+                    className="flex-1 min-w-0 text-left flex items-center gap-2 rounded px-1 py-1 hover:bg-slate-800/40 transition-colors"
                     aria-label={isChecked ? 'Mark as not bought' : 'Mark as bought'}
                 >
-                    {isChecked ? '✓' : ' '}
+                    <span
+                        className={`h-7 w-7 rounded border text-sm shrink-0 inline-flex items-center justify-center ${
+                            isChecked
+                                ? 'bg-green-600/30 border-green-400 text-green-300'
+                                : 'bg-slate-800 border-slate-500 text-slate-300'
+                        }`}
+                    >
+                        {isChecked ? '✓' : ' '}
+                    </span>
+                    <span
+                        className={`font-medium ${
+                            isChecked ? 'line-through text-slate-500' : 'text-slate-100'
+                        }`}
+                    >
+                        {!hideAmounts && item.quantity !== null ? `${String(item.quantity)} ` : ''}
+                        {!hideAmounts && item.unit ? `${item.unit} ` : ''}
+                        {item.nameSnapshot}
+                    </span>
                 </button>
-                <div
-                    className={`font-medium ${
-                        isChecked ? 'line-through text-slate-500' : 'text-slate-100'
-                    }`}
-                >
-                    {item.quantity !== null ? `${String(item.quantity)} ` : ''}
-                    {item.unit ? `${item.unit} ` : ''}
-                    {item.nameSnapshot}
-                </div>
             </div>
 
             <form
