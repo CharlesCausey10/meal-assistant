@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { deleteMeal, updateMeal } from './actions'
+import { addMealToGroceryList } from './actions-grocery'
 import { PreferenceInput } from './components/preference-input'
 import { IngredientInput } from './components/ingredient-input'
 import { MealLogForm } from './components/meal-log-form'
 import { ResponsiveModal } from './components/responsive-modal'
 import { CookingAnimation } from './components/cooking-animation'
+import { Toast } from './components/toast'
 import type { Ingredient } from '@prisma/client'
 import type { SerializedMealWithIngredients } from './utils/convert-prisma'
 
@@ -15,9 +17,19 @@ interface IngredientWithQuantity extends Ingredient {
     unit: string
 }
 
-export function MealList({ meals }: { meals: SerializedMealWithIngredients[] }) {
+type MealListProps = {
+    meals: SerializedMealWithIngredients[]
+    groceryLists: Array<{
+        id: number
+        name: string
+    }>
+}
+
+export function MealList({ meals, groceryLists }: MealListProps) {
     const [editingId, setEditingId] = useState<number | null>(null)
     const [loggingMealId, setLoggingMealId] = useState<number | null>(null)
+    const [addingToListMealId, setAddingToListMealId] = useState<number | null>(null)
+    const [toastMessage, setToastMessage] = useState<string | null>(null)
     const [editingIngredients, setEditingIngredients] = useState<IngredientWithQuantity[]>([])
     const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set())
 
@@ -43,6 +55,20 @@ export function MealList({ meals }: { meals: SerializedMealWithIngredients[] }) 
     const formatProtein = (protein: string) => {
         return protein.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
     }
+
+    const selectedAddToListMeal = meals.find((meal) => meal.id === addingToListMealId) || null
+
+    useEffect(() => {
+        if (!toastMessage) {
+            return
+        }
+
+        const timeout = setTimeout(() => {
+            setToastMessage(null)
+        }, 2800)
+
+        return () => clearTimeout(timeout)
+    }, [toastMessage])
 
     return (
         <>
@@ -231,14 +257,23 @@ export function MealList({ meals }: { meals: SerializedMealWithIngredients[] }) 
                                     </div>
                                 )}
 
-                                {/* Cook Button */}
-                                <button
-                                    onClick={() => setLoggingMealId(meal.id)}
-                                    className="w-full flex items-center justify-center gap-2 mt-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 rounded-xl font-semibold transition-all shadow-lg shadow-purple-500/20"
-                                >
-                                    <CookingAnimation hoverOnly />
-                                    Cook
-                                </button>
+                                {/* Action Buttons */}
+                                <div className="mt-2 flex items-center gap-2">
+                                    <button
+                                        onClick={() => setLoggingMealId(meal.id)}
+                                        className="flex-1 flex items-center justify-center gap-2 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 rounded-xl font-semibold transition-all shadow-lg shadow-purple-500/20"
+                                    >
+                                        <CookingAnimation hoverOnly />
+                                        Cook
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAddingToListMealId(meal.id)}
+                                        className="shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-100 px-4 py-3 rounded-xl font-semibold transition-colors border border-slate-600"
+                                    >
+                                        Add to List
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </li>
@@ -252,6 +287,61 @@ export function MealList({ meals }: { meals: SerializedMealWithIngredients[] }) 
                     onSuccess={() => setLoggingMealId(null)}
                 />
             </ResponsiveModal>
+
+            <ResponsiveModal
+                title="Add to Grocery List"
+                isOpen={addingToListMealId !== null}
+                onClose={() => setAddingToListMealId(null)}
+                position="top"
+            >
+                {selectedAddToListMeal ? (
+                    <div className="space-y-3">
+                        <p className="text-sm text-slate-300">
+                            Add <span className="font-semibold text-slate-100">{selectedAddToListMeal.name}</span> to:
+                        </p>
+
+                        {groceryLists.length === 0 ? (
+                            <div className="space-y-2">
+                                <p className="text-sm text-slate-400">No grocery lists yet.</p>
+                                <a
+                                    href="/?tab=grocery"
+                                    className="inline-block text-sm text-purple-300 hover:text-purple-200"
+                                >
+                                    Go to Grocery tab to create one
+                                </a>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {groceryLists.map((list) => (
+                                    <form
+                                        key={list.id}
+                                        action={async (formData) => {
+                                            await addMealToGroceryList(formData)
+                                            setToastMessage(
+                                                `Added ${selectedAddToListMeal.name} to ${list.name}`
+                                            )
+                                            setAddingToListMealId(null)
+                                        }}
+                                    >
+                                        <input type="hidden" name="mealId" value={selectedAddToListMeal.id} />
+                                        <input type="hidden" name="groceryListId" value={list.id} />
+                                        <button
+                                            type="submit"
+                                            className="w-full text-left p-3 bg-slate-800/70 hover:bg-slate-700/70 rounded-lg text-slate-100 transition-colors border border-slate-600"
+                                        >
+                                            {list.name}
+                                        </button>
+                                    </form>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+            </ResponsiveModal>
+
+            {toastMessage ? (
+                <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+            ) : null}
         </>
     )
 }

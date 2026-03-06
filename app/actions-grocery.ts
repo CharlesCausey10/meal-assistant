@@ -247,3 +247,125 @@ export async function deleteGroceryList(formData: FormData) {
 
     revalidatePath('/')
 }
+
+export async function addMealToGroceryList(formData: FormData) {
+    const groceryListId = parseIntValue(formData.get('groceryListId'))
+    const mealId = parseIntValue(formData.get('mealId'))
+
+    if (!groceryListId || !mealId) {
+        return
+    }
+
+    const mealIngredients = await prisma.mealIngredient.findMany({
+        where: { mealId },
+        include: {
+            ingredient: true,
+        },
+    })
+
+    await prisma.$transaction(async (tx) => {
+        await tx.groceryListMeal.upsert({
+            where: {
+                groceryListId_mealId: {
+                    groceryListId,
+                    mealId,
+                },
+            },
+            update: {},
+            create: {
+                groceryListId,
+                mealId,
+            },
+        })
+
+        if (mealIngredients.length === 0) {
+            return
+        }
+
+        const existingItems = await tx.groceryListItem.findMany({
+            where: {
+                groceryListId,
+                ingredientId: { not: null },
+            },
+            select: {
+                id: true,
+                ingredientId: true,
+                quantity: true,
+                unit: true,
+            },
+        })
+
+        const existingByKey = new Map<
+            string,
+            { id: number; quantity: number | null; unit: string | null }
+        >()
+
+        for (const item of existingItems) {
+            if (!item.ingredientId) {
+                continue
+            }
+
+            const normalizedUnit = (item.unit || '').trim().toLowerCase()
+            const key = `${item.ingredientId}|${normalizedUnit}`
+            const quantity = item.quantity
+                ? typeof item.quantity === 'number'
+                    ? item.quantity
+                    : item.quantity.toNumber()
+                : null
+
+            existingByKey.set(key, {
+                id: item.id,
+                quantity,
+                unit: item.unit,
+            })
+        }
+
+        const sortOrderRecord = await tx.groceryListItem.aggregate({
+            where: { groceryListId },
+            _max: { sortOrder: true },
+        })
+
+        let nextSortOrder = (sortOrderRecord._max.sortOrder ?? -1) + 1
+
+        for (const mealIngredient of mealIngredients) {
+            const normalizedUnit = mealIngredient.unit.trim().toLowerCase()
+            const key = `${mealIngredient.ingredientId}|${normalizedUnit}`
+            const quantityToAdd =
+                typeof mealIngredient.quantity === 'number'
+                    ? mealIngredient.quantity
+                    : mealIngredient.quantity.toNumber()
+
+            const existing = existingByKey.get(key)
+
+            if (existing) {
+                const currentQuantity = existing.quantity ?? 0
+
+                await tx.groceryListItem.update({
+                    where: { id: existing.id },
+                    data: {
+                        quantity: currentQuantity + quantityToAdd,
+                    },
+                })
+
+                continue
+            }
+
+            await tx.groceryListItem.create({
+                data: {
+                    groceryListId,
+                    ingredientId: mealIngredient.ingredientId,
+                    nameSnapshot: mealIngredient.ingredient.name,
+                    category: mealIngredient.ingredient.category,
+                    quantity: quantityToAdd,
+                    unit: mealIngredient.unit.trim(),
+                    sortOrder: nextSortOrder,
+                },
+            })
+
+            nextSortOrder += 1
+        }
+    })
+
+    await touchGroceryList(groceryListId)
+    revalidatePath('/')
+}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
-import { addManualGroceryItem } from '../actions-grocery'
+import { addManualGroceryItem, toggleGroceryItemChecked } from '../actions-grocery'
 import { GroceryItem } from './grocery-item'
 import { ResponsiveModal } from './responsive-modal'
 import { formatLabel } from '../utils/format'
@@ -21,6 +21,7 @@ type GroceryListContentProps = {
         }>
         items: Array<{
             id: number
+            ingredientId: number | null
             nameSnapshot: string
             quantity: number | null
             unit: string | null
@@ -58,6 +59,8 @@ export function GroceryListContent({
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isViewListsModalOpen, setIsViewListsModalOpen] = useState(false)
+    const [expandedIngredientGroups, setExpandedIngredientGroups] = useState<Set<string>>(new Set())
+    const [optimisticCheckedById, setOptimisticCheckedById] = useState<Record<number, boolean>>({})
     const hasLoadedRef = useRef(false)
     const isMountedRef = useRef(false)
     
@@ -161,8 +164,12 @@ export function GroceryListContent({
         setShowDropdown(false)
     }
 
+    const getEffectiveChecked = (item: { id: number; isChecked: boolean }) => {
+        return optimisticCheckedById[item.id] ?? item.isChecked
+    }
+
     const visibleItems = selectedList.items.filter((item) =>
-        hideChecked ? !item.isChecked : true
+        hideChecked ? !getEffectiveChecked(item) : true
     )
 
     const groupedItems = visibleItems.reduce<
@@ -187,6 +194,63 @@ export function GroceryListContent({
 
         return safeIndexA - safeIndexB
     })
+
+    const formatAmount = (item: {
+        quantity: number | null
+        unit: string | null
+    }) => {
+        const quantityText = item.quantity !== null ? String(item.quantity) : ''
+        const unitText = item.unit?.trim() || ''
+
+        return `${quantityText} ${unitText}`.trim()
+    }
+
+    const toggleGroupedItems = async (
+        items: Array<{ id: number; isChecked: boolean }>,
+        nextChecked: boolean
+    ) => {
+        const previousStates = new Map<number, boolean>(
+            items.map((item) => [item.id, getEffectiveChecked(item)])
+        )
+
+        setOptimisticCheckedById((previous) => {
+            const next = { ...previous }
+
+            for (const item of items) {
+                next[item.id] = nextChecked
+            }
+
+            return next
+        })
+
+        try {
+            await Promise.all(
+                items.map(async (item) => {
+                    const currentState = previousStates.get(item.id) ?? item.isChecked
+                    if (currentState === nextChecked) {
+                        return
+                    }
+
+                    const formData = new FormData()
+                    formData.append('groceryItemId', String(item.id))
+                    formData.append('isChecked', String(nextChecked))
+                    await toggleGroceryItemChecked(formData)
+                })
+            )
+        } catch (error) {
+            setOptimisticCheckedById((previous) => {
+                const next = { ...previous }
+
+                for (const [id, checked] of previousStates.entries()) {
+                    next[id] = checked
+                }
+
+                return next
+            })
+
+            console.error('Failed to toggle grouped items:', error)
+        }
+    }
 
     return (
         <>
@@ -506,26 +570,152 @@ export function GroceryListContent({
                             No grocery items yet.
                         </div>
                     ) : (
-                        groupedEntries.map(([group, items]) => (
-                            <section
-                                key={group}
-                                className="space-y-1.5"
-                            >
-                                <h3 className="text-sm uppercase tracking-wide text-purple-300 font-semibold">
-                                    {formatLabel(group)}
-                                </h3>
-                                <ul className="space-y-1.5">
-                                    {items.map((item) => (
-                                        <GroceryItem
-                                            key={item.id}
-                                            item={item}
-                                            ingredientCategories={ingredientCategories}
-                                            hideAmounts={hideAmounts}
-                                        />
-                                    ))}
-                                </ul>
-                            </section>
-                        ))
+                        groupedEntries.map(([group, items]) => {
+                            const ingredientEntryMap = new Map<
+                                string,
+                                {
+                                    key: string
+                                    items: typeof items
+                                }
+                            >()
+
+                            for (const item of items) {
+                                const key =
+                                    item.ingredientId !== null
+                                        ? `ingredient:${item.ingredientId}`
+                                        : `item:${item.id}`
+
+                                if (!ingredientEntryMap.has(key)) {
+                                    ingredientEntryMap.set(key, {
+                                        key,
+                                        items: [item],
+                                    })
+                                } else {
+                                    ingredientEntryMap.get(key)!.items.push(item)
+                                }
+                            }
+
+                            const ingredientEntries = Array.from(ingredientEntryMap.values())
+
+                            return (
+                                <section
+                                    key={group}
+                                    className="space-y-1.5"
+                                >
+                                    <h3 className="text-sm uppercase tracking-wide text-purple-300 font-semibold">
+                                        {formatLabel(group)}
+                                    </h3>
+                                    <ul className="space-y-1.5">
+                                        {ingredientEntries.map((entry) => {
+                                            if (entry.items.length === 1) {
+                                                const item = entry.items[0]
+                                                const itemWithOptimisticChecked = {
+                                                    ...item,
+                                                    isChecked: getEffectiveChecked(item),
+                                                }
+
+                                                return (
+                                                    <GroceryItem
+                                                        key={`${item.id}:${itemWithOptimisticChecked.isChecked ? '1' : '0'}`}
+                                                        item={itemWithOptimisticChecked}
+                                                        ingredientCategories={ingredientCategories}
+                                                        hideAmounts={hideAmounts}
+                                                    />
+                                                )
+                                            }
+
+                                            const primaryItem = entry.items[0]
+                                            const summaryKey = `${group}:${entry.key}`
+                                            const isExpanded = expandedIngredientGroups.has(summaryKey)
+                                            const allChecked = entry.items.every((item) => getEffectiveChecked(item))
+                                            const someChecked = !allChecked && entry.items.some((item) => getEffectiveChecked(item))
+
+                                            const amountList = entry.items
+                                                .map((item) => formatAmount(item))
+                                                .filter(Boolean)
+
+                                            const displayName = hideAmounts || amountList.length === 0
+                                                ? primaryItem.nameSnapshot
+                                                : `${amountList.join(', ')} ${primaryItem.nameSnapshot}`
+
+                                            return (
+                                                <li key={summaryKey} className="space-y-1.5">
+                                                    <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const nextChecked = !allChecked
+                                                                    void toggleGroupedItems(entry.items, nextChecked)
+                                                                }}
+                                                                className="flex-1 min-w-0 text-left flex items-center gap-2 rounded px-1 py-1 hover:bg-slate-800/40 transition-colors"
+                                                                aria-label={allChecked ? 'Mark as not bought' : 'Mark as bought'}
+                                                            >
+                                                                <span
+                                                                    className={`h-7 w-7 rounded border text-sm shrink-0 inline-flex items-center justify-center ${
+                                                                        allChecked
+                                                                            ? 'bg-green-600/30 border-green-400 text-green-300'
+                                                                            : someChecked
+                                                                                ? 'bg-yellow-600/20 border-yellow-400 text-yellow-300'
+                                                                                : 'bg-slate-800 border-slate-500 text-slate-300'
+                                                                    }`}
+                                                                >
+                                                                    {allChecked ? '✓' : someChecked ? '−' : ' '}
+                                                                </span>
+                                                                <span className="flex-1 min-w-0">
+                                                                    <span
+                                                                        className={`font-medium block ${
+                                                                            allChecked ? 'line-through text-slate-500' : 'text-slate-100'
+                                                                        }`}
+                                                                    >
+                                                                        {displayName}
+                                                                    </span>
+                                                                </span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const next = new Set(expandedIngredientGroups)
+                                                                    if (next.has(summaryKey)) {
+                                                                        next.delete(summaryKey)
+                                                                    } else {
+                                                                        next.add(summaryKey)
+                                                                    }
+                                                                    setExpandedIngredientGroups(next)
+                                                                }}
+                                                                className="text-purple-400 hover:text-purple-300 hover:bg-slate-700/50 rounded px-2.5 py-0.5 text-sm transition-colors shrink-0"
+                                                            >
+                                                                {isExpanded ? 'Hide' : 'Edit'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {isExpanded ? (
+                                                        <ul className="space-y-1.5 pl-2 border-l border-slate-700/70">
+                                                            {entry.items.map((item) => {
+                                                                const itemWithOptimisticChecked = {
+                                                                    ...item,
+                                                                    isChecked: getEffectiveChecked(item),
+                                                                }
+
+                                                                return (
+                                                                    <GroceryItem
+                                                                        key={`${item.id}:${itemWithOptimisticChecked.isChecked ? '1' : '0'}`}
+                                                                        item={itemWithOptimisticChecked}
+                                                                        ingredientCategories={ingredientCategories}
+                                                                        hideAmounts={hideAmounts}
+                                                                    />
+                                                                )
+                                                            })}
+                                                        </ul>
+                                                    ) : null}
+                                                </li>
+                                            )
+                                        })}
+                                    </ul>
+                                </section>
+                            )
+                        })
                     )}
                 </div>
             </div>

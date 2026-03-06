@@ -96,7 +96,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
         setSearchInput('')
         setSelectedIngredientId(null)
         setNewQuantity('')
-        setNewUnit('cup')
+        setNewUnit('whole')
     }
 
     const handleRemoveIngredient = (id: number) => {

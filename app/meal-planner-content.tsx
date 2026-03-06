@@ -10,7 +10,15 @@ import { ResponsiveModal } from './components/responsive-modal'
 
 const NO_PROTEIN_FILTER = 'NO_PROTEIN'
 
-export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredients[] }) {
+type MealPlannerContentProps = {
+    meals: SerializedMealWithIngredients[]
+    groceryLists: Array<{
+        id: number
+        name: string
+    }>
+}
+
+export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentProps) {
     const searchParams = useSearchParams()
     const [isNewMealOpen, setIsNewMealOpen] = useState(false)
     const [searchValue, setSearchValue] = useState(searchParams.get('search') || '')
@@ -167,7 +175,7 @@ export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredi
                 {/* </div> */}
                 <div className="flex-1 overflow-y-auto">
                     {filteredMeals.length > 0 ? (
-                        <MealList meals={filteredMeals} />
+                        <MealList meals={filteredMeals} groceryLists={groceryLists} />
                     ) : (
                         <div className="h-full grid place-items-center text-slate-400">
                             {meals.length === 0 ? 'No meals yet.' : 'No meals match your search.'}

@@ -23,6 +23,7 @@ type GroceryListWrapperProps = {
         }>
         items: Array<{
             id: number
+            ingredientId: number | null
             nameSnapshot: string
             quantity: number | null
             unit: string | null

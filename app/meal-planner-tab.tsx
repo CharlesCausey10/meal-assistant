@@ -9,22 +9,34 @@ export async function MealPlannerTab({
 }) {
     await searchParams
 
-    const meals = await prisma.meal.findMany({
-        include: {
-            ingredients: {
-                include: {
-                    ingredient: true,
+    const [meals, groceryLists] = await Promise.all([
+        prisma.meal.findMany({
+            include: {
+                ingredients: {
+                    include: {
+                        ingredient: true,
+                    }
                 }
-            }
-        },
-        orderBy: [
-            { preference: 'desc' },
-            { createdAt: 'desc' }
-        ],
-    })
+            },
+            orderBy: [
+                { preference: 'desc' },
+                { createdAt: 'desc' }
+            ],
+        }),
+        prisma.groceryList.findMany({
+            select: {
+                id: true,
+                name: true,
+            },
+            orderBy: [
+                { updatedAt: 'desc' },
+                { createdAt: 'desc' },
+            ],
+        }),
+    ])
 
     // Convert Decimal quantities to numbers for safe serialization to Client Component
     const serializedMeals = serializeMeals(meals)
 
-    return <MealPlannerContent meals={serializedMeals} />
+    return <MealPlannerContent meals={serializedMeals} groceryLists={groceryLists} />
 }
