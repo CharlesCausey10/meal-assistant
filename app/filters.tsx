@@ -1,57 +1,22 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useTransition, useCallback } from 'react'
+type FiltersProps = {
+    searchValue: string
+    onSearchChange: (value: string) => void
+    selectedProteins: string[]
+    onProteinsChange: (proteins: string[]) => void
+    selectedCategories: string[]
+    onCategoriesChange: (categories: string[]) => void
+}
 
-export function Filters() {
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const [searchValue, setSearchValue] = useState(searchParams.get('search') || '')
-    const [selectedProteins, setSelectedProteins] = useState(
-        searchParams.get('protein')?.split(',').filter(Boolean) || []
-    )
-    const [selectedCategories, setSelectedCategories] = useState(
-        searchParams.get('category')?.split(',').filter(Boolean) || []
-    )
-    const [, startTransition] = useTransition()
-
-    const updateUrlAndRefresh = useCallback((params: URLSearchParams, mode: 'push' | 'replace' = 'push') => {
-        const nextQuery = params.toString()
-        const nextUrl = nextQuery ? `?${nextQuery}` : window.location.pathname
-
-        if (mode === 'push') {
-            window.history.pushState(null, '', nextUrl)
-        } else {
-            window.history.replaceState(null, '', nextUrl)
-        }
-
-        startTransition(() => {
-            router.refresh()
-        })
-    }, [router, startTransition])
-
-    // Debounce search parameter update
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            const params = new URLSearchParams(window.location.search)
-            const currentSearch = params.get('search') || ''
-
-            if (searchValue === currentSearch) {
-                return
-            }
-
-            if (searchValue === '') {
-                params.delete('search')
-            } else {
-                params.set('search', searchValue)
-            }
-
-            // Search is high-frequency so replace avoids adding a history entry for each keystroke.
-            updateUrlAndRefresh(params, 'replace')
-        }, 300)
-
-        return () => clearTimeout(timer)
-    }, [searchValue, updateUrlAndRefresh])
+export function Filters({
+    searchValue,
+    onSearchChange,
+    selectedProteins,
+    onProteinsChange,
+    selectedCategories,
+    onCategoriesChange,
+}: FiltersProps) {
 
     const handleCheckboxChange = (key: string, value: string, checked: boolean) => {
         const current = key === 'protein' ? selectedProteins : selectedCategories
@@ -64,20 +29,10 @@ export function Filters() {
         }
 
         if (key === 'protein') {
-            setSelectedProteins(updated)
+            onProteinsChange(updated)
         } else {
-            setSelectedCategories(updated)
+            onCategoriesChange(updated)
         }
-
-        const params = new URLSearchParams(window.location.search)
-
-        if (updated.length === 0) {
-            params.delete(key)
-        } else {
-            params.set(key, updated.join(','))
-        }
-
-        updateUrlAndRefresh(params, 'push')
     }
 
     const isChecked = (key: string, value: string) => {
@@ -86,21 +41,15 @@ export function Filters() {
     }
 
     const clearSearch = () => {
-        setSearchValue('')
+        onSearchChange('')
     }
 
     const clearProtein = () => {
-        setSelectedProteins([])
-        const params = new URLSearchParams(window.location.search)
-        params.delete('protein')
-        updateUrlAndRefresh(params, 'push')
+        onProteinsChange([])
     }
 
     const clearCategory = () => {
-        setSelectedCategories([])
-        const params = new URLSearchParams(window.location.search)
-        params.delete('category')
-        updateUrlAndRefresh(params, 'push')
+        onCategoriesChange([])
     }
 
     return (
@@ -119,7 +68,7 @@ export function Filters() {
                         type="text"
                         placeholder="Search meals..."
                         value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
+                        onChange={(e) => onSearchChange(e.target.value)}
                         className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm placeholder-slate-400"
                     />
                 </div>

@@ -22,6 +22,7 @@ export function IngredientEditContent({
     const [editingId, setEditingId] = useState<number | null>(null)
     const [editName, setEditName] = useState('')
     const [editCategory, setEditCategory] = useState<IngredientCategory>('OTHER')
+    const [searchQuery, setSearchQuery] = useState('')
 
     const handleCreate = async (formData: FormData) => {
         await createIngredient(formData)
@@ -47,9 +48,16 @@ export function IngredientEditContent({
         handleEditCancel()
     }
 
+    const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+    const filteredIngredients = normalizedSearchQuery
+        ? ingredients.filter((ingredient) =>
+              ingredient.name.toLowerCase().includes(normalizedSearchQuery)
+          )
+        : ingredients
+
     const groupedIngredients = ingredientCategories.reduce(
         (acc, category) => {
-            acc[category] = ingredients.filter((ing) => ing.category === category)
+            acc[category] = filteredIngredients.filter((ing) => ing.category === category)
             return acc
         },
         {} as Record<IngredientCategory, Ingredient[]>
@@ -115,13 +123,26 @@ export function IngredientEditContent({
                         + Add Ingredient
                     </button>
                 )}
+
+                <div className="mt-4">
+                    <input
+                        type="search"
+                        placeholder="Search ingredients..."
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg bg-slate-900/80 text-slate-100"
+                        aria-label="Search ingredients"
+                    />
+                </div>
             </div>
 
             {/* Ingredients List */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                {ingredients.length === 0 ? (
+                {filteredIngredients.length === 0 ? (
                     <div className="h-full grid place-items-center text-slate-400">
-                        No ingredients yet.
+                        {ingredients.length === 0
+                            ? 'No ingredients yet.'
+                            : 'No ingredients match your search.'}
                     </div>
                 ) : (
                     <div className="space-y-6">

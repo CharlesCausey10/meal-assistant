@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { SerializedMealWithIngredients } from './utils/convert-prisma'
 import { Filters } from './filters'
 import { MealList } from './meal-list'
@@ -9,55 +9,117 @@ import { MealForm } from './components/meal-form'
 import { ResponsiveModal } from './components/responsive-modal'
 
 export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredients[] }) {
-    const router = useRouter()
     const searchParams = useSearchParams()
     const [isNewMealOpen, setIsNewMealOpen] = useState(false)
-    const [mobileSearchValue, setMobileSearchValue] = useState(searchParams.get('search') || '')
-    const [, startTransition] = useTransition()
+    const [searchValue, setSearchValue] = useState(searchParams.get('search') || '')
+    const [selectedProteins, setSelectedProteins] = useState<string[]>(
+        searchParams.get('protein')?.split(',').filter(Boolean) || []
+    )
+    const [selectedCategories, setSelectedCategories] = useState<string[]>(
+        searchParams.get('category')?.split(',').filter(Boolean) || []
+    )
 
-    const updateUrlAndRefresh = useCallback((params: URLSearchParams, mode: 'push' | 'replace' = 'push') => {
-        const nextQuery = params.toString()
-        const nextUrl = nextQuery ? `?${nextQuery}` : window.location.pathname
-
-        if (mode === 'push') {
-            window.history.pushState(null, '', nextUrl)
-        } else {
-            window.history.replaceState(null, '', nextUrl)
-        }
-
-        startTransition(() => {
-            router.refresh()
-        })
-    }, [router, startTransition])
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
+    const updateQuery = useCallback(
+        (
+            updates: {
+                search?: string
+                proteins?: string[]
+                categories?: string[]
+            },
+            mode: 'push' | 'replace' = 'push'
+        ) => {
             const params = new URLSearchParams(window.location.search)
-            const currentSearch = params.get('search') || ''
 
-            if (mobileSearchValue === currentSearch) {
-                return
-            }
+            const nextSearch = updates.search !== undefined ? updates.search : searchValue
+            const nextProteins = updates.proteins !== undefined ? updates.proteins : selectedProteins
+            const nextCategories =
+                updates.categories !== undefined ? updates.categories : selectedCategories
 
-            if (mobileSearchValue === '') {
+            if (nextSearch.trim() === '') {
                 params.delete('search')
             } else {
-                params.set('search', mobileSearchValue)
+                params.set('search', nextSearch)
             }
 
-            updateUrlAndRefresh(params, 'replace')
-        }, 300)
+            if (nextProteins.length === 0) {
+                params.delete('protein')
+            } else {
+                params.set('protein', nextProteins.join(','))
+            }
 
-        return () => clearTimeout(timer)
-    }, [mobileSearchValue, updateUrlAndRefresh])
+            if (nextCategories.length === 0) {
+                params.delete('category')
+            } else {
+                params.set('category', nextCategories.join(','))
+            }
+
+            const nextQuery = params.toString()
+            const nextUrl = nextQuery ? `?${nextQuery}` : window.location.pathname
+
+            if (mode === 'push') {
+                window.history.pushState(null, '', nextUrl)
+            } else {
+                window.history.replaceState(null, '', nextUrl)
+            }
+        },
+        [searchValue, selectedProteins, selectedCategories]
+    )
+
+    const handleSearchChange = useCallback((nextValue: string) => {
+        setSearchValue(nextValue)
+        updateQuery({ search: nextValue }, 'replace')
+    }, [updateQuery])
+
+    const handleProteinsChange = useCallback((nextProteins: string[]) => {
+        setSelectedProteins(nextProteins)
+        updateQuery({ proteins: nextProteins }, 'push')
+    }, [updateQuery])
+
+    const handleCategoriesChange = useCallback((nextCategories: string[]) => {
+        setSelectedCategories(nextCategories)
+        updateQuery({ categories: nextCategories }, 'push')
+    }, [updateQuery])
+
+    const isProteinMatch = useCallback(
+        (protein: string | null) => {
+            if (selectedProteins.length === 0) {
+                return true
+            }
+
+            return protein === null || selectedProteins.includes(protein)
+        },
+        [selectedProteins]
+    )
+
+    const isCategoryMatch = useCallback(
+        (category: string) => {
+            if (selectedCategories.length === 0) {
+                return true
+            }
+
+            return selectedCategories.includes(category)
+        },
+        [selectedCategories]
+    )
+
+    const filteredMeals = useMemo(() => {
+        const normalizedSearch = searchValue.trim().toLowerCase()
+        return meals.filter((meal) => {
+            const isSearchMatch =
+                normalizedSearch.length === 0 ||
+                meal.name.toLowerCase().includes(normalizedSearch)
+
+            return isSearchMatch && isProteinMatch(meal.protein) && isCategoryMatch(meal.category)
+        })
+    }, [meals, searchValue, isProteinMatch, isCategoryMatch])
 
     return (
         <div className="h-full flex flex-col md:flex-row">
             <div className="md:hidden p-3 border-b border-purple-500/20 flex gap-2">
                 <button
                     type="button"
-                    disabled={!mobileSearchValue}
-                    onClick={() => setMobileSearchValue('')}
+                    disabled={!searchValue}
+                    onClick={() => handleSearchChange('')}
                     className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg p-2 transition-colors disabled:text-slate-600 disabled:hover:bg-transparent"
                     aria-label="Clear search"
                 >
@@ -66,8 +128,8 @@ export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredi
                 <input
                     type="text"
                     placeholder="Search meals..."
-                    value={mobileSearchValue}
-                    onChange={(e) => setMobileSearchValue(e.target.value)}
+                    value={searchValue}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm placeholder-slate-400"
                 />
                 <button
@@ -88,10 +150,23 @@ export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredi
 
             <div className="flex-1 md:w-1/2 flex flex-col gap-4 p-4 overflow-hidden">
                 {/* <div className="bg-slate-800 p-4 rounded-xl border border-purple-500/30 shrink-0"> */}
-                <Filters />
+                <Filters
+                    searchValue={searchValue}
+                    onSearchChange={handleSearchChange}
+                    selectedProteins={selectedProteins}
+                    onProteinsChange={handleProteinsChange}
+                    selectedCategories={selectedCategories}
+                    onCategoriesChange={handleCategoriesChange}
+                />
                 {/* </div> */}
                 <div className="flex-1 overflow-y-auto">
-                    <MealList meals={meals} />
+                    {filteredMeals.length > 0 ? (
+                        <MealList meals={filteredMeals} />
+                    ) : (
+                        <div className="h-full grid place-items-center text-slate-400">
+                            {meals.length === 0 ? 'No meals yet.' : 'No meals match your search.'}
+                        </div>
+                    )}
                 </div>
             </div>
 
