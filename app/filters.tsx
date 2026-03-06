@@ -9,6 +9,26 @@ type FiltersProps = {
     onCategoriesChange: (categories: string[]) => void
 }
 
+const PROTEIN_FILTER_OPTIONS = [
+    { value: 'NO_PROTEIN', label: 'No protein' },
+    { value: 'EGGS', label: '🥚 Eggs' },
+    { value: 'CHICKEN_BREAST', label: '🐔 Chicken Breast' },
+    { value: 'CHICKEN_THIGHS', label: '🐔 Chicken Thighs' },
+    { value: 'ROTISSERIE_CHICKEN', label: '🐔 Rotisserie Chicken' },
+    { value: 'GROUND_BEEF', label: '🐄 Ground Beef' },
+    { value: 'PORK_BUTT', label: '🐷 Pork Butt' },
+    { value: 'FISH', label: '🐟 Fish' },
+]
+
+const CATEGORY_FILTER_OPTIONS = [
+    { value: 'BREAKFAST', label: 'Breakfast' },
+    { value: 'LUNCH', label: 'Lunch' },
+    { value: 'DINNER', label: 'Dinner' },
+    { value: 'SIDE_STARTER', label: 'Side/Starter' },
+    { value: 'SNACK', label: 'Snack' },
+    { value: 'DESSERT', label: 'Dessert' },
+]
+
 export function Filters({
     searchValue,
     onSearchChange,
@@ -76,15 +96,7 @@ export function Filters({
             {/* Mobile: Compact pill rows */}
             <div className="md:hidden space-y-2">
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Protein filters">
-                        {[
-                            { value: 'EGGS', label: '🥚 Eggs' },
-                            { value: 'CHICKEN_BREAST', label: '🐔 Chicken Breast' },
-                            { value: 'CHICKEN_THIGHS', label: '🐔 Chicken Thighs' },
-                            { value: 'ROTISSERIE_CHICKEN', label: '🐔 Rotisserie Chicken' },
-                            { value: 'GROUND_BEEF', label: '🐄 Ground Beef' },
-                            { value: 'PORK_BUTT', label: '🐷 Pork Butt' },
-                            { value: 'FISH', label: '🐟 Fish' },
-                        ].map(({ value, label }) => (
+                        {PROTEIN_FILTER_OPTIONS.map(({ value, label }) => (
                             <button
                                 key={value}
                                 onClick={() => handleCheckboxChange('protein', value, !isChecked('protein', value))}
@@ -99,14 +111,7 @@ export function Filters({
                         ))}
                 </div>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Category filters">
-                        {[
-                            { value: 'BREAKFAST', label: 'Breakfast' },
-                            { value: 'LUNCH', label: 'Lunch' },
-                            { value: 'DINNER', label: 'Dinner' },
-                            { value: 'SIDE_STARTER', label: 'Side/Starter' },
-                            { value: 'SNACK', label: 'Snack' },
-                            { value: 'DESSERT', label: 'Dessert' },
-                        ].map(({ value, label }) => (
+                        {CATEGORY_FILTER_OPTIONS.map(({ value, label }) => (
                             <button
                                 key={value}
                                 onClick={() => handleCheckboxChange('category', value, !isChecked('category', value))}
@@ -138,15 +143,7 @@ export function Filters({
                         <h3 className="text-xs py-1 font-medium text-purple-300">Proteins</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {[
-                            { value: 'CHICKEN_BREAST', label: '🐔 Chicken Breast' },
-                            { value: 'CHICKEN_THIGHS', label: '🐔 Chicken Thighs' },
-                            { value: 'ROTISSERIE_CHICKEN', label: '🐔 Rotisserie Chicken' },
-                            { value: 'GROUND_BEEF', label: '🐄 Ground Beef' },
-                            { value: 'PORK_BUTT', label: '🐷 Pork Butt' },
-                            { value: 'FISH', label: '🐟 Fish' },
-                            { value: 'EGGS', label: '🥚 Eggs' },
-                        ].map(({ value, label }) => (
+                        {PROTEIN_FILTER_OPTIONS.map(({ value, label }) => (
                             <button
                                 key={value}
                                 onClick={() => handleCheckboxChange('protein', value, !isChecked('protein', value))}
@@ -175,14 +172,7 @@ export function Filters({
                         <h3 className="text-xs py-1 font-medium text-purple-300">Categories</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {[
-                            { value: 'BREAKFAST', label: 'Breakfast' },
-                            { value: 'LUNCH', label: 'Lunch' },
-                            { value: 'DINNER', label: 'Dinner' },
-                            { value: 'SIDE_STARTER', label: 'Side/Starter' },
-                            { value: 'SNACK', label: 'Snack' },
-                            { value: 'DESSERT', label: 'Dessert' },
-                        ].map(({ value, label }) => (
+                        {CATEGORY_FILTER_OPTIONS.map(({ value, label }) => (
                             <button
                                 key={value}
                                 onClick={() => handleCheckboxChange('category', value, !isChecked('category', value))}

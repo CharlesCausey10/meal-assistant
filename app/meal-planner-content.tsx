@@ -8,6 +8,8 @@ import { MealList } from './meal-list'
 import { MealForm } from './components/meal-form'
 import { ResponsiveModal } from './components/responsive-modal'
 
+const NO_PROTEIN_FILTER = 'NO_PROTEIN'
+
 export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredients[] }) {
     const searchParams = useSearchParams()
     const [isNewMealOpen, setIsNewMealOpen] = useState(false)
@@ -86,7 +88,11 @@ export function MealPlannerContent({ meals }: { meals: SerializedMealWithIngredi
                 return true
             }
 
-            return protein === null || selectedProteins.includes(protein)
+            if (protein === null) {
+                return selectedProteins.includes(NO_PROTEIN_FILTER)
+            }
+
+            return selectedProteins.includes(protein)
         },
         [selectedProteins]
     )
