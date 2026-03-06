@@ -67,6 +67,7 @@ export function GroceryListWrapper({
                         ingredientCategories={ingredientCategories}
                         groupOrder={groupOrder}
                         onCreateListClick={() => setIsCreateModalOpen(true)}
+                        groceryLists={groceryListsForSidebar}
                     />
                 )}
             </div>

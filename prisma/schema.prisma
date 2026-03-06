@@ -39,6 +39,7 @@ enum IngredientCategory {
     CONDIMENTS
     CANNED_GOODS
     FROZEN
+    SNACKS_CHIPS
     SPICES_HERBS
     SWEETS
     OTHER

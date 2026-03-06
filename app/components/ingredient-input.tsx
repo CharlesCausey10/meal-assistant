@@ -248,21 +248,22 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                             onChange={(e) => setNewIngredientCategory(e.target.value)}
                             className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
                         >
-                            <option value="PRODUCE">Produce</option>
-                            <option value="MEAT">Meat</option>
-                            <option value="SEAFOOD">Seafood</option>
+                            <option value="OTHER">Other</option>
                             <option value="DAIRY">Dairy</option>
                             <option value="DRINKS">Drinks</option>
                             <option value="GRAINS_BREAD">Grains & Bread</option>
+                            <option value="SWEETS">Sweets</option>
                             <option value="NUTS_SEEDS">Nuts & Seeds</option>
+                            <option value="SPICES_HERBS">Spices & Herbs</option>
                             <option value="BAKING">Baking</option>
+                            <option value="CANNED_GOODS">Canned Goods</option>
                             <option value="OILS_VINEGARS">Oils & Vinegars</option>
                             <option value="CONDIMENTS">Condiments</option>
-                            <option value="CANNED_GOODS">Canned Goods</option>
                             <option value="FROZEN">Frozen</option>
-                            <option value="SPICES_HERBS">Spices & Herbs</option>
-                            <option value="SWEETS">Sweets</option>
-                            <option value="OTHER">Other</option>
+                            <option value="SNACKS_CHIPS">Snacks & Chips</option>
+                            <option value="MEAT">Meat</option>
+                            <option value="SEAFOOD">Seafood</option>
+                            <option value="PRODUCE">Produce</option>
                         </select>
                     </div>
                     <button

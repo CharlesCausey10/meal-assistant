@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
 import { ResponsiveModal } from './responsive-modal'
 import { MealSelector } from './meal-selector'
 import { createGroceryList, deleteGroceryList } from '../actions-grocery'
@@ -124,6 +124,16 @@ export function GroceryListSidebar({
                                 })}
                             </ul>
                         )}
+                    </div>
+
+                    <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-purple-500/30 space-y-3">
+                        <h2 className="text-lg font-semibold text-purple-200">Ingredients</h2>
+                        <Link
+                            href="/?tab=ingredients"
+                            className="block text-center bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                        >
+                            ✏️ Edit Ingredients
+                        </Link>
                     </div>
                 </div>
             </div>

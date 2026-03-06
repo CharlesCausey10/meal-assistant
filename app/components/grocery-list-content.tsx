@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
+import { useState, useEffect, useRef } from 'react'
 import { addManualGroceryItem } from '../actions-grocery'
 import { GroceryItem } from './grocery-item'
 import { ResponsiveModal } from './responsive-modal'
@@ -33,6 +34,16 @@ type GroceryListContentProps = {
     ingredientCategories: IngredientCategory[]
     groupOrder: string[]
     onCreateListClick: () => void
+    groceryLists: Array<{
+        id: number
+        name: string
+    }>
+}
+
+type Ingredient = {
+    id: number
+    name: string
+    category: IngredientCategory
 }
 
 export function GroceryListContent({
@@ -40,10 +51,108 @@ export function GroceryListContent({
     ingredientCategories,
     groupOrder,
     onCreateListClick,
+    groceryLists,
 }: GroceryListContentProps) {
     const [hideChecked, setHideChecked] = useState(false)
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isViewListsModalOpen, setIsViewListsModalOpen] = useState(false)
+    const hasLoadedRef = useRef(false)
+    const isMountedRef = useRef(false)
+    
+    // Ingredient autocomplete state
+    const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([])
+    const [itemNameInput, setItemNameInput] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState<IngredientCategory>('OTHER')
+    const [showDropdown, setShowDropdown] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    
+    // Desktop form state
+    const [desktopItemNameInput, setDesktopItemNameInput] = useState('')
+    const [desktopSelectedCategory, setDesktopSelectedCategory] = useState<IngredientCategory>('OTHER')
+    const [showDesktopDropdown, setShowDesktopDropdown] = useState(false)
+    const desktopDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Load from localStorage after mount
+    useEffect(() => {
+        isMountedRef.current = true
+        if (!hasLoadedRef.current) {
+            hasLoadedRef.current = true
+            try {
+                const stored = localStorage.getItem('groceryListHideChecked')
+                if (stored !== null) {
+                    const parsed = JSON.parse(stored)
+                    // Use queueMicrotask to defer state update to avoid cascading render
+                    queueMicrotask(() => setHideChecked(parsed))
+                }
+            } catch (error) {
+                console.error('Error reading from localStorage:', error)
+            }
+        }
+    }, [])
+
+    // Fetch available ingredients
+    useEffect(() => {
+        fetch('/api/ingredients')
+            .then(res => res.json())
+            .then(data => setAvailableIngredients(data))
+            .catch(err => console.error('Failed to fetch ingredients:', err))
+    }, [])
+    
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false)
+            }
+            if (desktopDropdownRef.current && !desktopDropdownRef.current.contains(e.target as Node)) {
+                setShowDesktopDropdown(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    // Save preference to localStorage whenever it changes
+    useEffect(() => {
+        if (isMountedRef.current && hasLoadedRef.current) {
+            try {
+                localStorage.setItem('groceryListHideChecked', JSON.stringify(hideChecked))
+            } catch (error) {
+                console.error('Error writing to localStorage:', error)
+            }
+        }
+    }, [hideChecked])
+    
+    // Filter ingredients based on search input
+    const filteredIngredients = availableIngredients.filter(ing =>
+        ing.name.toLowerCase().includes(itemNameInput.toLowerCase())
+    ).slice(0, 5)
+    
+    const desktopFilteredIngredients = availableIngredients.filter(ing =>
+        ing.name.toLowerCase().includes(desktopItemNameInput.toLowerCase())
+    ).slice(0, 5)
+    
+    // Handle selecting an ingredient from dropdown
+    const handleSelectIngredient = (ingredient: Ingredient) => {
+        setItemNameInput(ingredient.name)
+        setSelectedCategory(ingredient.category)
+        setShowDropdown(false)
+    }
+    
+    const handleSelectDesktopIngredient = (ingredient: Ingredient) => {
+        setDesktopItemNameInput(ingredient.name)
+        setDesktopSelectedCategory(ingredient.category)
+        setShowDesktopDropdown(false)
+    }
+    
+    // Reset form when modal closes
+    const handleCloseModal = () => {
+        setIsAddItemModalOpen(false)
+        setItemNameInput('')
+        setSelectedCategory('OTHER')
+        setShowDropdown(false)
+    }
 
     const visibleItems = selectedList.items.filter((item) =>
         hideChecked ? !item.isChecked : true
@@ -83,47 +192,81 @@ export function GroceryListContent({
                 +
             </button>
 
+            {/* View Lists Modal - mobile only */}
+            <ResponsiveModal
+                title="View Lists"
+                isOpen={isViewListsModalOpen}
+                onClose={() => setIsViewListsModalOpen(false)}
+                position='top'
+            >
+                <div className="space-y-2">
+                    {groceryLists.length === 0 ? (
+                        <p className="text-slate-400 text-sm">No grocery lists yet.</p>
+                    ) : (
+                        groceryLists.map((list) => (
+                            <a
+                                key={list.id}
+                                href={`?listId=${list.id}`}
+                                onClick={() => setIsViewListsModalOpen(false)}
+                                className="block p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-100 transition-colors border border-slate-600"
+                            >
+                                {list.name}
+                            </a>
+                        ))
+                    )}
+                </div>
+            </ResponsiveModal>
+
             {/* Add Manual Item Modal - mobile only */}
             <ResponsiveModal
                 title="Add Manual Item"
                 isOpen={isAddItemModalOpen}
-                onClose={() => setIsAddItemModalOpen(false)}
+                onClose={handleCloseModal}
                 position='top'
             >
                 <form
                     action={async (formData) => {
                         await addManualGroceryItem(formData)
-                        setIsAddItemModalOpen(false)
+                        handleCloseModal()
                     }}
                     className="space-y-3"
                 >
                     <input type="hidden" name="groceryListId" value={selectedList.id} />
-                    <input
-                        type="text"
-                        name="name"
-                        placeholder="Item name"
-                        required
-                        autoFocus
-                        className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
-                    />
-                    {/* <div className="grid grid-cols-2 gap-2">
-                        <input
-                            type="number"
-                            step="0.1"
-                            name="quantity"
-                            placeholder="Quantity"
-                            className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
-                        />
+                    <div className="relative" ref={dropdownRef}>
                         <input
                             type="text"
-                            name="unit"
-                            placeholder="Unit"
-                            className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                            name="name"
+                            placeholder="Item name"
+                            required
+                            autoFocus
+                            value={itemNameInput}
+                            onChange={(e) => {
+                                setItemNameInput(e.target.value)
+                                setShowDropdown(e.target.value.length > 0)
+                            }}
+                            onFocus={() => setShowDropdown(itemNameInput.length > 0)}
+                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
                         />
-                    </div> */}
+                        {showDropdown && filteredIngredients.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                {filteredIngredients.map((ingredient) => (
+                                    <button
+                                        key={ingredient.id}
+                                        type="button"
+                                        onClick={() => handleSelectIngredient(ingredient)}
+                                        className="w-full text-left px-3 py-2 hover:bg-slate-700 text-slate-200 text-sm border-b border-slate-700 last:border-b-0"
+                                    >
+                                        <div className="font-medium">{ingredient.name}</div>
+                                        <div className="text-xs text-slate-400">{formatLabel(ingredient.category)}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                     <select
                         name="category"
-                        defaultValue="OTHER"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value as IngredientCategory)}
                         className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
                     >
                         {ingredientCategories.map((category) => (
@@ -178,19 +321,51 @@ export function GroceryListContent({
                                                     setHideChecked(!hideChecked)
                                                     setIsMenuOpen(false)
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700"
+                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
                                             >
-                                                {hideChecked ? 'Show checked items' : 'Hide checked items'}
+                                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    {hideChecked ? (
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    ) : (
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                    )}
+                                                </svg>
+                                                <span>{hideChecked ? 'Show checked items' : 'Hide checked items'}</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setIsViewListsModalOpen(true)
+                                                    setIsMenuOpen(false)
+                                                }}
+                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
+                                            >
+                                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                                </svg>
+                                                <span>View lists</span>
                                             </button>
                                             <button
                                                 onClick={() => {
                                                     onCreateListClick()
                                                     setIsMenuOpen(false)
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors"
+                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
                                             >
-                                                Create New List
+                                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                <span>New list</span>
                                             </button>
+                                            <Link
+                                                href="/?tab=ingredients"
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors flex items-center gap-3"
+                                            >
+                                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                <span>Edit ingredients</span>
+                                            </Link>
                                         </div>
                                     </>
                                 )}
@@ -221,17 +396,44 @@ export function GroceryListContent({
                 <div className="hidden md:block bg-slate-800/60 border border-purple-500/30 rounded-xl p-3 space-y-2">
                     <h3 className="text-lg font-semibold text-purple-200">Add Manual Item</h3>
                     <form
-                        action={addManualGroceryItem}
+                        action={async (formData) => {
+                            await addManualGroceryItem(formData)
+                            setDesktopItemNameInput('')
+                            setDesktopSelectedCategory('OTHER')
+                        }}
                         className="grid grid-cols-1 md:grid-cols-6 gap-2"
                     >
                         <input type="hidden" name="groceryListId" value={selectedList.id} />
-                        <input
-                            type="text"
-                            name="name"
-                            placeholder="Item name"
-                            required
-                            className="md:col-span-2 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
-                        />
+                        <div className="md:col-span-2 relative" ref={desktopDropdownRef}>
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Item name"
+                                required
+                                value={desktopItemNameInput}
+                                onChange={(e) => {
+                                    setDesktopItemNameInput(e.target.value)
+                                    setShowDesktopDropdown(e.target.value.length > 0)
+                                }}
+                                onFocus={() => setShowDesktopDropdown(desktopItemNameInput.length > 0)}
+                                className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                            />
+                            {showDesktopDropdown && desktopFilteredIngredients.length > 0 && (
+                                <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                    {desktopFilteredIngredients.map((ingredient) => (
+                                        <button
+                                            key={ingredient.id}
+                                            type="button"
+                                            onClick={() => handleSelectDesktopIngredient(ingredient)}
+                                            className="w-full text-left px-3 py-2 hover:bg-slate-700 text-slate-200 text-sm border-b border-slate-700 last:border-b-0"
+                                        >
+                                            <div className="font-medium">{ingredient.name}</div>
+                                            <div className="text-xs text-slate-400">{formatLabel(ingredient.category)}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                         <input
                             type="number"
                             step="0.1"
@@ -247,7 +449,8 @@ export function GroceryListContent({
                         />
                         <select
                             name="category"
-                            defaultValue="OTHER"
+                            value={desktopSelectedCategory}
+                            onChange={(e) => setDesktopSelectedCategory(e.target.value as IngredientCategory)}
                             className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
                         >
                             {ingredientCategories.map((category) => (

@@ -12,21 +12,22 @@ type SearchParams = {
 }
 
 const INGREDIENT_CATEGORIES: IngredientCategory[] = [
-    'PRODUCE',
-    'MEAT',
-    'SEAFOOD',
+    'OTHER',
     'DAIRY',
     'DRINKS',
     'GRAINS_BREAD',
+    'SWEETS',
+    'SNACKS_CHIPS',
     'NUTS_SEEDS',
+    'SPICES_HERBS',
     'BAKING',
+    'CANNED_GOODS',
     'OILS_VINEGARS',
     'CONDIMENTS',
-    'CANNED_GOODS',
     'FROZEN',
-    'SPICES_HERBS',
-    'SWEETS',
-    'OTHER',
+    'MEAT',
+    'SEAFOOD',
+    'PRODUCE',
 ]
 
 const GROUP_ORDER = [...INGREDIENT_CATEGORIES, 'UNCATEGORIZED']
@@ -88,17 +89,17 @@ export async function GroceryTab({
     // Serialize Decimal fields for client component
     const serializedSelectedList = selectedList
         ? {
-              ...selectedList,
-              items: selectedList.items.map((item) => ({
-                  ...item,
-                  quantity:
-                      item.quantity !== null
-                          ? typeof item.quantity === 'number'
-                              ? item.quantity
-                              : item.quantity.toNumber()
-                          : null,
-              })),
-          }
+            ...selectedList,
+            items: selectedList.items.map((item) => ({
+                ...item,
+                quantity:
+                    item.quantity !== null
+                        ? typeof item.quantity === 'number'
+                            ? item.quantity
+                            : item.quantity.toNumber()
+                        : null,
+            })),
+        }
         : null
 
     const mealOptions = meals.map((meal) => ({
