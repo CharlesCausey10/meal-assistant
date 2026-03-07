@@ -205,6 +205,69 @@ export function GroceryListContent({
         return `${quantityText} ${unitText}`.trim()
     }
 
+    const handleCopyList = async () => {
+        const lines: string[] = []
+
+        for (const [group, items] of groupedEntries) {
+            // Add category header
+            lines.push(formatLabel(group))
+            
+            // Group items by ingredient
+            const ingredientEntryMap = new Map<
+                string,
+                {
+                    key: string
+                    items: typeof items
+                }
+            >()
+
+            for (const item of items) {
+                const key =
+                    item.ingredientId !== null
+                        ? `ingredient:${item.ingredientId}`
+                        : `item:${item.id}`
+
+                if (!ingredientEntryMap.has(key)) {
+                    ingredientEntryMap.set(key, {
+                        key,
+                        items: [item],
+                    })
+                } else {
+                    ingredientEntryMap.get(key)!.items.push(item)
+                }
+            }
+
+            const ingredientEntries = Array.from(ingredientEntryMap.values())
+
+            // Add each ingredient
+            for (const entry of ingredientEntries) {
+                const primaryItem = entry.items[0]
+                const amountList = entry.items
+                    .map((item) => formatAmount(item))
+                    .filter(Boolean)
+
+                const itemText = hideAmounts || amountList.length === 0
+                    ? primaryItem.nameSnapshot
+                    : `${amountList.join(', ')} ${primaryItem.nameSnapshot}`
+
+                lines.push(itemText)
+            }
+
+            // Add blank line after each category
+            lines.push('')
+        }
+
+        // Join with newlines and copy to clipboard
+        const text = lines.join('\n')
+        
+        try {
+            await navigator.clipboard.writeText(text)
+            setIsMenuOpen(false)
+        } catch (err) {
+            console.error('Failed to copy to clipboard:', err)
+        }
+    }
+
     const toggleGroupedItems = async (
         items: Array<{ id: number; isChecked: boolean }>,
         nextChecked: boolean
@@ -445,6 +508,15 @@ export function GroceryListContent({
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                                 </svg>
                                                 <span>New list</span>
+                                            </button>
+                                            <button
+                                                onClick={handleCopyList}
+                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
+                                            >
+                                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                                <span>Copy list</span>
                                             </button>
                                             <Link
                                                 href="/?tab=ingredients"
