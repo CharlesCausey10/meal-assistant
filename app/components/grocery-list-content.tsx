@@ -195,6 +195,16 @@ export function GroceryListContent({
         return safeIndexA - safeIndexB
     })
 
+    // Calculate unchecked items count
+    const totalUncheckedCount = selectedList.items.filter(
+        item => !getEffectiveChecked(item)
+    ).length
+
+    // Calculate unchecked count per category
+    const uncheckedCountByCategory = (categoryItems: typeof visibleItems) => {
+        return categoryItems.filter(item => !getEffectiveChecked(item)).length
+    }
+
     const formatAmount = (item: {
         quantity: number | null
         unit: string | null
@@ -418,12 +428,24 @@ export function GroceryListContent({
                 </form>
             </ResponsiveModal>
 
-            <div className="space-y-3">
-                <div className="space-y-2">
+            <div className="flex flex-col h-full">
+                {/* Header section - fixed */}
+                <div className="shrink-0 space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                        <h2 className="text-xl font-semibold text-slate-100">
-                            {selectedList.name}
-                        </h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-semibold text-slate-100">
+                                {selectedList.name}
+                            </h2>
+                            {totalUncheckedCount === 0 ? (
+                                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                            ) : (
+                                <span className="text-sm font-medium text-slate-400 bg-slate-800/50 px-2.5 py-0.5 rounded-full">
+                                    {totalUncheckedCount} left
+                                </span>
+                            )}
+                        </div>
                         <div className="flex items-center gap-2">
                             {/* Desktop hide/show toggle */}
                             <button
@@ -554,8 +576,8 @@ export function GroceryListContent({
                 )} */}
                 </div>
 
-                {/* Desktop Add Manual Item form - hidden on mobile */}
-                <div className="hidden md:block bg-slate-800/60 border border-purple-500/30 rounded-xl p-3 space-y-2">
+                {/* Desktop Add Manual Item form - fixed */}
+                <div className="shrink-0 hidden md:block bg-slate-800/60 border border-purple-500/30 rounded-xl p-3 space-y-2">
                     <h3 className="text-lg font-semibold text-purple-200">Add Manual Item</h3>
                     <form
                         action={async (formData) => {
@@ -636,7 +658,9 @@ export function GroceryListContent({
                     </form>
                 </div>
 
-                <div className="space-y-3.5">
+                {/* Scrollable items section */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="space-y-3.5">
                     {groupedEntries.length === 0 ? (
                         <div className="text-center text-slate-400 py-8 bg-slate-800/40 border border-slate-700 rounded-xl">
                             No grocery items yet.
@@ -674,9 +698,20 @@ export function GroceryListContent({
                                     key={group}
                                     className="space-y-1.5"
                                 >
-                                    <h3 className="text-sm uppercase tracking-wide text-purple-300 font-semibold">
-                                        {formatLabel(group)}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm uppercase tracking-wide text-purple-300 font-semibold">
+                                            {formatLabel(group)}
+                                        </h3>
+                                        {uncheckedCountByCategory(items) === 0 ? (
+                                            <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                        ) : (
+                                            <span className="text-xs font-medium text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded">
+                                                {uncheckedCountByCategory(items)} left
+                                            </span>
+                                        )}
+                                    </div>
                                     <ul className="space-y-1.5">
                                         {ingredientEntries.map((entry) => {
                                             if (entry.items.length === 1) {
@@ -789,6 +824,7 @@ export function GroceryListContent({
                             )
                         })
                     )}
+                </div>
                 </div>
             </div>
         </>

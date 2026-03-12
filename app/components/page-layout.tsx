@@ -77,7 +77,7 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     }
 
     return (
-        <div className="h-screen flex flex-col bg-slate-900">
+        <div className="h-dvh flex flex-col bg-slate-900">
             <h1 className="sr-only">{title}</h1>
             <div className="shrink-0 border-b border-purple-500/30">
                 <div className="max-w-7xl mx-auto">
@@ -102,7 +102,7 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
 
             {/* Content Area */}
             <div className="flex-1 overflow-hidden">
-                <div className="max-w-7xl mx-auto h-full p-1">
+                <div className="max-w-7xl mx-auto h-full p-1 flex flex-col">
                     {activeTabContent}
                 </div>
             </div>
