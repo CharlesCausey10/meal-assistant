@@ -91,7 +91,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     name="name"
                                     defaultValue={meal.name}
                                     placeholder="Meal name"
-                                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm"
+                                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
                                     required
                                 />
                                 <input
@@ -99,13 +99,13 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     defaultValue={meal.recipeUrl || ''}
                                     placeholder="Recipe URL (optional)"
                                     type="url"
-                                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm"
+                                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
                                 />
                                 <div className="grid grid-cols-3 gap-2">
                                     <select
                                         name="protein"
                                         defaultValue={meal.protein || ''}
-                                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm"
+                                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
                                     >
                                         <option value="">Protein (optional)</option>
                                         <option value="CHICKEN_BREAST">🐔 Chicken Breast</option>
@@ -119,7 +119,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     <select
                                         name="category"
                                         defaultValue={meal.category}
-                                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm"
+                                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
                                         required
                                     >
                                         <option value="BREAKFAST">Breakfast</option>

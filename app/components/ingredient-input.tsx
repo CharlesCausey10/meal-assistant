@@ -169,7 +169,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                                 setIsOpen(true)
                             }}
                             onFocus={() => setIsOpen(true)}
-                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
                         />
                         
                         {isOpen && filteredIngredients.length > 0 && (
@@ -201,12 +201,12 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                         value={newQuantity}
                         onChange={(e) => setNewQuantity(e.target.value)}
                         step="0.1"
-                        className="w-16 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                        className="w-16 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
                     />
                     <select
                         value={newUnit}
                         onChange={(e) => setNewUnit(e.target.value)}
-                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
                     >
                         {commonUnits.map(unit => (
                             <option key={unit} value={unit}>{unit}</option>
@@ -235,7 +235,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                             placeholder="e.g., Broccoli"
                             value={newIngredientName}
                             onChange={(e) => setNewIngredientName(e.target.value)}
-                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
                         />
                     </div>
                     <div>
@@ -246,7 +246,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                             id="ingredient-category"
                             value={newIngredientCategory}
                             onChange={(e) => setNewIngredientCategory(e.target.value)}
-                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-sm bg-slate-900/80 text-slate-100"
+                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
                         >
                             <option value="OTHER">Other</option>
                             <option value="DAIRY">Dairy</option>

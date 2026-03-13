@@ -135,7 +135,7 @@ export function GroceryItem({ item, ingredientCategories, hideAmounts = false }:
                     name="name"
                     defaultValue={item.nameSnapshot}
                     required
-                    className="md:col-span-2 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-sm"
+                    className="md:col-span-2 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-base"
                 />
                 <input
                     type="number"
@@ -143,19 +143,19 @@ export function GroceryItem({ item, ingredientCategories, hideAmounts = false }:
                     name="quantity"
                     defaultValue={item.quantity !== null ? String(item.quantity) : ''}
                     placeholder="Qty"
-                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-sm"
+                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-base"
                 />
                 <input
                     type="text"
                     name="unit"
                     defaultValue={item.unit || ''}
                     placeholder="Unit"
-                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-sm"
+                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-base"
                 />
                 <select
                     name="category"
                     defaultValue={item.category || 'OTHER'}
-                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-sm"
+                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-base"
                 >
                     {ingredientCategories.map((category) => (
                         <option key={category} value={category}>
@@ -183,7 +183,7 @@ export function GroceryItem({ item, ingredientCategories, hideAmounts = false }:
                     name="note"
                     defaultValue={item.note || ''}
                     placeholder="Optional note"
-                    className="md:col-span-6 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-sm"
+                    className="md:col-span-6 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-base"
                 />
             </form>
             

@@ -89,7 +89,7 @@ export function Filters({
                         placeholder="Search meals..."
                         value={searchValue}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-sm placeholder-slate-400"
+                        className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base placeholder-slate-400"
                     />
                 </div>
             </div>
