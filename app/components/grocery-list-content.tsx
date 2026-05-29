@@ -330,7 +330,7 @@ export function GroceryListContent({
             {/* Floating + button - mobile only */}
             <button
                 onClick={() => setIsAddItemModalOpen(true)}
-                className="md:hidden fixed bottom-6 right-6 z-40 bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-light transition-all"
+                className="md:hidden fixed bottom-20 right-6 z-40 bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-light transition-all"
                 aria-label="Add grocery item"
             >
                 +
@@ -824,6 +824,9 @@ export function GroceryListContent({
                             )
                         })
                     )}
+                    <div className="md:hidden min-h-28 pt-4 pb-6 text-center text-sm text-app-subtle">
+                        Tap the + button to add another item to this list.
+                    </div>
                 </div>
                 </div>
             </div>

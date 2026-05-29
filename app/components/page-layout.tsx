@@ -76,29 +76,35 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
         router.push(`${pathname}?${params.toString()}`)
     }
 
+    const tabNavigation = (
+        <nav
+            className="shrink-0 order-last md:order-first border-t md:border-t-0 md:border-b border-primary/30 bg-app-bg"
+            aria-label="Primary"
+        >
+            <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-3 md:flex md:gap-4">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => handleTabChange(tab.id)}
+                            className={`min-h-14 px-2 py-2 text-sm md:min-h-0 md:px-4 md:text-base font-medium transition-colors ${
+                                activeTab === tab.id
+                                    ? 'text-primary border-t-2 md:border-t-0 md:border-b-2 border-primary'
+                                    : 'text-app-subtle hover:text-app-muted'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </nav>
+    )
+
     return (
         <div className="h-dvh flex flex-col bg-app-bg">
             <h1 className="sr-only">{title}</h1>
-            <div className="shrink-0 border-b border-primary/30">
-                <div className="max-w-7xl mx-auto">
-                    {/* Tab Navigation */}
-                    <div className="flex gap-4 pb-0">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => handleTabChange(tab.id)}
-                                className={`px-4 py-2 font-medium transition-colors ${
-                                    activeTab === tab.id
-                                        ? 'text-primary border-b-2 border-primary'
-                                        : 'text-app-subtle hover:text-app-muted'
-                                }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
+            {tabNavigation}
 
             {/* Content Area */}
             <div className="flex-1 overflow-hidden">
