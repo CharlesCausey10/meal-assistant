@@ -79,7 +79,7 @@ export function Filters({
                     <button
                         disabled={!searchValue}
                         onClick={clearSearch}
-                        className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg p-2 transition-colors disabled:text-slate-600 disabled:hover:bg-transparent"
+                        className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors disabled:text-app-subtle/60 disabled:hover:bg-transparent"
                         aria-label="Clear search"
                     >
                         ✕
@@ -89,7 +89,7 @@ export function Filters({
                         placeholder="Search meals..."
                         value={searchValue}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base placeholder-slate-400"
+                        className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base placeholder-app-subtle"
                     />
                 </div>
             </div>
@@ -102,8 +102,8 @@ export function Filters({
                                 onClick={() => handleCheckboxChange('protein', value, !isChecked('protein', value))}
                                 className={`px-3 py-2 rounded-full text-base font-medium transition-all shrink-0 ${
                                     isChecked('protein', value)
-                                        ? 'bg-purple-500 text-white border border-purple-400'
-                                        : 'bg-slate-700 text-slate-200 border border-slate-600 hover:border-purple-400'
+                                        ? 'bg-primary text-primary-contrast border border-primary'
+                                        : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
                                 }`}
                             >
                                 {label}
@@ -117,8 +117,8 @@ export function Filters({
                                 onClick={() => handleCheckboxChange('category', value, !isChecked('category', value))}
                                 className={`px-3 py-2 rounded-full text-base font-medium transition-all shrink-0 ${
                                     isChecked('category', value)
-                                        ? 'bg-purple-500 text-white border border-purple-400'
-                                        : 'bg-slate-700 text-slate-200 border border-slate-600 hover:border-purple-400'
+                                        ? 'bg-primary text-primary-contrast border border-primary'
+                                        : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
                                 }`}
                             >
                                 {label}
@@ -134,13 +134,13 @@ export function Filters({
                         {selectedProteins.length > 0 && (
                             <button
                                 onClick={clearProtein}
-                                className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-md py-1 px-2 transition-colors text-xs"
+                                className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-md py-1 px-2 transition-colors text-xs"
                                 aria-label="Clear proteins"
                             >
                                 ✕
                             </button>
                         )}
-                        <h3 className="text-xs py-1 font-medium text-purple-300">Proteins</h3>
+                        <h3 className="text-xs py-1 font-medium text-primary-text">Proteins</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {PROTEIN_FILTER_OPTIONS.map(({ value, label }) => (
@@ -149,8 +149,8 @@ export function Filters({
                                 onClick={() => handleCheckboxChange('protein', value, !isChecked('protein', value))}
                                 className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
                                     isChecked('protein', value)
-                                        ? 'bg-purple-500 text-white border border-purple-400'
-                                        : 'bg-slate-700 text-slate-200 border border-slate-600 hover:border-purple-400'
+                                        ? 'bg-primary text-primary-contrast border border-primary'
+                                        : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
                                 }`}
                             >
                                 {label}
@@ -163,13 +163,13 @@ export function Filters({
                         {selectedCategories.length > 0 && (
                             <button
                                 onClick={clearCategory}
-                                className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-md py-1 px-2 transition-colors text-xs"
+                                className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-md py-1 px-2 transition-colors text-xs"
                                 aria-label="Clear categories"
                             >
                                 ✕
                             </button>
                         )}
-                        <h3 className="text-xs py-1 font-medium text-purple-300">Categories</h3>
+                        <h3 className="text-xs py-1 font-medium text-primary-text">Categories</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {CATEGORY_FILTER_OPTIONS.map(({ value, label }) => (
@@ -178,8 +178,8 @@ export function Filters({
                                 onClick={() => handleCheckboxChange('category', value, !isChecked('category', value))}
                                 className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
                                     isChecked('category', value)
-                                        ? 'bg-purple-500 text-white border border-purple-400'
-                                        : 'bg-slate-700 text-slate-200 border border-slate-600 hover:border-purple-400'
+                                        ? 'bg-primary text-primary-contrast border border-primary'
+                                        : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
                                 }`}
                             >
                                 {label}

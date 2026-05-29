@@ -330,7 +330,7 @@ export function GroceryListContent({
             {/* Floating + button - mobile only */}
             <button
                 onClick={() => setIsAddItemModalOpen(true)}
-                className="md:hidden fixed bottom-6 right-6 z-40 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-light transition-all"
+                className="md:hidden fixed bottom-6 right-6 z-40 bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-light transition-all"
                 aria-label="Add grocery item"
             >
                 +
@@ -345,14 +345,14 @@ export function GroceryListContent({
             >
                 <div className="space-y-2">
                     {groceryLists.length === 0 ? (
-                        <p className="text-slate-400 text-sm">No grocery lists yet.</p>
+                        <p className="text-app-subtle text-sm">No grocery lists yet.</p>
                     ) : (
                         groceryLists.map((list) => (
                             <a
                                 key={list.id}
                                 href={`?listId=${list.id}`}
                                 onClick={() => setIsViewListsModalOpen(false)}
-                                className="block p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-100 transition-colors border border-slate-600"
+                                className="block p-3 bg-app-surface-soft/80 hover:bg-app-surface-soft rounded-lg text-app-text transition-colors border border-app-border"
                             >
                                 {list.name}
                             </a>
@@ -389,19 +389,19 @@ export function GroceryListContent({
                                 setShowDropdown(e.target.value.length > 0)
                             }}
                             onFocus={() => setShowDropdown(itemNameInput.length > 0)}
-                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                            className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                         />
                         {showDropdown && filteredIngredients.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                            <div className="absolute z-50 w-full mt-1 bg-app-surface border border-app-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                 {filteredIngredients.map((ingredient) => (
                                     <button
                                         key={ingredient.id}
                                         type="button"
                                         onClick={() => handleSelectIngredient(ingredient)}
-                                        className="w-full text-left px-3 py-2 hover:bg-slate-700 text-slate-200 text-sm border-b border-slate-700 last:border-b-0"
+                                        className="w-full text-left px-3 py-2 hover:bg-app-surface-soft text-app-text/85 text-sm border-b border-app-border last:border-b-0"
                                     >
                                         <div className="font-medium">{ingredient.name}</div>
-                                        <div className="text-xs text-slate-400">{formatLabel(ingredient.category)}</div>
+                                        <div className="text-xs text-app-subtle">{formatLabel(ingredient.category)}</div>
                                     </button>
                                 ))}
                             </div>
@@ -411,7 +411,7 @@ export function GroceryListContent({
                         name="category"
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value as IngredientCategory)}
-                        className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                        className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                     >
                         {ingredientCategories.map((category) => (
                             <option key={category} value={category}>
@@ -421,7 +421,7 @@ export function GroceryListContent({
                     </select>
                     <button
                         type="submit"
-                        className="w-full bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                        className="w-full bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast px-4 py-2 rounded-lg font-medium transition-all"
                     >
                         Add Item
                     </button>
@@ -433,15 +433,15 @@ export function GroceryListContent({
                 <div className="shrink-0 space-y-2">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-xl font-semibold text-slate-100">
+                            <h2 className="text-xl font-semibold text-app-text">
                                 {selectedList.name}
                             </h2>
                             {totalUncheckedCount === 0 ? (
-                                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                <svg className="w-5 h-5 text-success" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                 </svg>
                             ) : (
-                                <span className="text-sm font-medium text-slate-400 bg-slate-800/50 px-2.5 py-0.5 rounded-full">
+                                <span className="text-sm font-medium text-app-subtle bg-app-surface/80 px-2.5 py-0.5 rounded-full">
                                     {totalUncheckedCount} left
                                 </span>
                             )}
@@ -450,7 +450,7 @@ export function GroceryListContent({
                             {/* Desktop hide/show toggle */}
                             <button
                                 onClick={() => setHideChecked(!hideChecked)}
-                                className="hidden md:block text-sm text-purple-300 hover:text-purple-200 transition-colors"
+                                className="hidden md:block text-sm text-primary-text hover:text-primary-text transition-colors"
                             >
                                 {hideChecked ? 'Show checked items' : 'Hide checked items'}
                             </button>
@@ -458,7 +458,7 @@ export function GroceryListContent({
                             <div className="md:hidden relative">
                                 <button
                                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                    className="text-slate-300 hover:text-slate-100 p-2 rounded hover:bg-slate-700/50 transition-colors"
+                                    className="text-app-muted hover:text-app-text p-2 rounded hover:bg-app-surface-soft/80 transition-colors"
                                     aria-label="Menu"
                                 >
                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -471,13 +471,13 @@ export function GroceryListContent({
                                             className="fixed inset-0 z-30"
                                             onClick={() => setIsMenuOpen(false)}
                                         />
-                                        <div className="absolute right-0 top-full mt-2 w-56 bg-slate-800 border border-purple-500/30 rounded-lg shadow-xl z-40 overflow-hidden">
+                                        <div className="absolute right-0 top-full mt-2 w-56 bg-app-surface border border-primary/30 rounded-lg shadow-xl z-40 overflow-hidden">
                                             <button
                                                 onClick={() => {
                                                     setHideChecked(!hideChecked)
                                                     setIsMenuOpen(false)
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
+                                                className="w-full text-left px-4 py-3 text-app-text/85 hover:bg-app-surface-soft/80 transition-colors border-b border-app-border flex items-center gap-3"
                                             >
                                                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     {hideChecked ? (
@@ -493,7 +493,7 @@ export function GroceryListContent({
                                                     setHideAmounts(!hideAmounts)
                                                     setIsMenuOpen(false)
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
+                                                className="w-full text-left px-4 py-3 text-app-text/85 hover:bg-app-surface-soft/80 transition-colors border-b border-app-border flex items-center gap-3"
                                             >
                                                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     {hideAmounts ? (
@@ -512,7 +512,7 @@ export function GroceryListContent({
                                                     setIsViewListsModalOpen(true)
                                                     setIsMenuOpen(false)
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
+                                                className="w-full text-left px-4 py-3 text-app-text/85 hover:bg-app-surface-soft/80 transition-colors border-b border-app-border flex items-center gap-3"
                                             >
                                                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -524,7 +524,7 @@ export function GroceryListContent({
                                                     onCreateListClick()
                                                     setIsMenuOpen(false)
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
+                                                className="w-full text-left px-4 py-3 text-app-text/85 hover:bg-app-surface-soft/80 transition-colors border-b border-app-border flex items-center gap-3"
                                             >
                                                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -533,7 +533,7 @@ export function GroceryListContent({
                                             </button>
                                             <button
                                                 onClick={handleCopyList}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors border-b border-slate-700 flex items-center gap-3"
+                                                className="w-full text-left px-4 py-3 text-app-text/85 hover:bg-app-surface-soft/80 transition-colors border-b border-app-border flex items-center gap-3"
                                             >
                                                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -543,7 +543,7 @@ export function GroceryListContent({
                                             <Link
                                                 href="/?tab=ingredients"
                                                 onClick={() => setIsMenuOpen(false)}
-                                                className="w-full text-left px-4 py-3 text-slate-200 hover:bg-slate-700/50 transition-colors flex items-center gap-3"
+                                                className="w-full text-left px-4 py-3 text-app-text/85 hover:bg-app-surface-soft/80 transition-colors flex items-center gap-3"
                                             >
                                                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -557,16 +557,16 @@ export function GroceryListContent({
                         </div>
                     </div>
                     {selectedList.notes && (
-                        <p className="text-sm text-slate-300">{selectedList.notes}</p>
+                        <p className="text-sm text-app-muted">{selectedList.notes}</p>
                     )}
                     {/* {selectedList.sourceMeals.length > 0 && (
-                    <div className="text-sm text-slate-300 space-y-1">
-                        <p className="text-slate-400">Generated from meals:</p>
+                    <div className="text-sm text-app-muted space-y-1">
+                        <p className="text-app-subtle">Generated from meals:</p>
                         <div className="flex flex-wrap gap-2">
                             {selectedList.sourceMeals.map((source) => (
                                 <span
                                     key={source.id}
-                                    className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full"
+                                    className="text-xs bg-app-surface-soft text-app-text/85 px-2 py-1 rounded-full"
                                 >
                                     {source.meal.name}
                                 </span>
@@ -577,8 +577,8 @@ export function GroceryListContent({
                 </div>
 
                 {/* Desktop Add Manual Item form - fixed */}
-                <div className="shrink-0 hidden md:block bg-slate-800/60 border border-purple-500/30 rounded-xl p-3 space-y-2">
-                    <h3 className="text-lg font-semibold text-purple-200">Add Manual Item</h3>
+                <div className="shrink-0 hidden md:block bg-app-surface/85 border border-primary/30 rounded-xl p-3 space-y-2">
+                    <h3 className="text-lg font-semibold text-primary-text">Add Manual Item</h3>
                     <form
                         action={async (formData) => {
                             await addManualGroceryItem(formData)
@@ -600,19 +600,19 @@ export function GroceryListContent({
                                     setShowDesktopDropdown(e.target.value.length > 0)
                                 }}
                                 onFocus={() => setShowDesktopDropdown(desktopItemNameInput.length > 0)}
-                                className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                                className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                             />
                             {showDesktopDropdown && desktopFilteredIngredients.length > 0 && (
-                                <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                <div className="absolute z-50 w-full mt-1 bg-app-surface border border-app-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                     {desktopFilteredIngredients.map((ingredient) => (
                                         <button
                                             key={ingredient.id}
                                             type="button"
                                             onClick={() => handleSelectDesktopIngredient(ingredient)}
-                                            className="w-full text-left px-3 py-2 hover:bg-slate-700 text-slate-200 text-sm border-b border-slate-700 last:border-b-0"
+                                            className="w-full text-left px-3 py-2 hover:bg-app-surface-soft text-app-text/85 text-sm border-b border-app-border last:border-b-0"
                                         >
                                             <div className="font-medium">{ingredient.name}</div>
-                                            <div className="text-xs text-slate-400">{formatLabel(ingredient.category)}</div>
+                                            <div className="text-xs text-app-subtle">{formatLabel(ingredient.category)}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -623,19 +623,19 @@ export function GroceryListContent({
                             step="0.1"
                             name="quantity"
                             placeholder="Qty"
-                            className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                            className="border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                         />
                         <input
                             type="text"
                             name="unit"
                             placeholder="Unit"
-                            className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                            className="border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                         />
                         <select
                             name="category"
                             value={desktopSelectedCategory}
                             onChange={(e) => setDesktopSelectedCategory(e.target.value as IngredientCategory)}
-                            className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                            className="border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                         >
                             {ingredientCategories.map((category) => (
                                 <option key={category} value={category}>
@@ -645,7 +645,7 @@ export function GroceryListContent({
                         </select>
                         <button
                             type="submit"
-                            className="bg-slate-700 hover:bg-slate-600 text-slate-100 px-3 py-2 rounded text-sm font-medium transition-colors"
+                            className="bg-app-surface-soft hover:bg-app-border-strong text-app-text px-3 py-2 rounded text-sm font-medium transition-colors"
                         >
                             Add Item
                         </button>
@@ -653,7 +653,7 @@ export function GroceryListContent({
                             type="text"
                             name="note"
                             placeholder="Optional note"
-                            className="md:col-span-6 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                            className="md:col-span-6 border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                         />
                     </form>
                 </div>
@@ -662,7 +662,7 @@ export function GroceryListContent({
                 <div className="flex-1 overflow-y-auto">
                     <div className="space-y-3.5">
                     {groupedEntries.length === 0 ? (
-                        <div className="text-center text-slate-400 py-8 bg-slate-800/40 border border-slate-700 rounded-xl">
+                        <div className="text-center text-app-subtle py-8 bg-app-surface-soft/60 border border-app-border rounded-xl">
                             No grocery items yet.
                         </div>
                     ) : (
@@ -699,15 +699,15 @@ export function GroceryListContent({
                                     className="space-y-1.5"
                                 >
                                     <div className="flex items-center gap-2">
-                                        <h3 className="text-sm uppercase tracking-wide text-purple-300 font-semibold">
+                                        <h3 className="text-sm uppercase tracking-wide text-primary-text font-semibold">
                                             {formatLabel(group)}
                                         </h3>
                                         {uncheckedCountByCategory(items) === 0 ? (
-                                            <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
                                         ) : (
-                                            <span className="text-xs font-medium text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded">
+                                            <span className="text-xs font-medium text-app-subtle bg-app-surface/80 px-2 py-0.5 rounded">
                                                 {uncheckedCountByCategory(items)} left
                                             </span>
                                         )}
@@ -747,7 +747,7 @@ export function GroceryListContent({
 
                                             return (
                                                 <li key={summaryKey} className="space-y-1.5">
-                                                    <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-2">
+                                                    <div className="bg-app-surface/80 border border-app-border rounded-lg p-2">
                                                         <div className="flex items-center gap-2">
                                                             <button
                                                                 type="button"
@@ -755,16 +755,16 @@ export function GroceryListContent({
                                                                     const nextChecked = !allChecked
                                                                     void toggleGroupedItems(entry.items, nextChecked)
                                                                 }}
-                                                                className="flex-1 min-w-0 text-left flex items-center gap-2 rounded px-1 py-1 hover:bg-slate-800/40 transition-colors"
+                                                                className="flex-1 min-w-0 text-left flex items-center gap-2 rounded px-1 py-1 hover:bg-app-surface-soft/60 transition-colors"
                                                                 aria-label={allChecked ? 'Mark as not bought' : 'Mark as bought'}
                                                             >
                                                                 <span
                                                                     className={`h-7 w-7 rounded border text-sm shrink-0 inline-flex items-center justify-center ${
                                                                         allChecked
-                                                                            ? 'bg-green-600/30 border-green-400 text-green-300'
+                                                                            ? 'bg-success-soft border-success text-success'
                                                                             : someChecked
-                                                                                ? 'bg-yellow-600/20 border-yellow-400 text-yellow-300'
-                                                                                : 'bg-slate-800 border-slate-500 text-slate-300'
+                                                                                ? 'bg-warning-soft border-warning text-warning'
+                                                                                : 'bg-app-surface border-app-border-strong text-app-muted'
                                                                     }`}
                                                                 >
                                                                     {allChecked ? '✓' : someChecked ? '−' : ' '}
@@ -772,7 +772,7 @@ export function GroceryListContent({
                                                                 <span className="flex-1 min-w-0">
                                                                     <span
                                                                         className={`font-medium block ${
-                                                                            allChecked ? 'line-through text-slate-500' : 'text-slate-100'
+                                                                            allChecked ? 'line-through text-app-subtle/80' : 'text-app-text'
                                                                         }`}
                                                                     >
                                                                         {displayName}
@@ -790,7 +790,7 @@ export function GroceryListContent({
                                                                     }
                                                                     setExpandedIngredientGroups(next)
                                                                 }}
-                                                                className="text-purple-400 hover:text-purple-300 hover:bg-slate-700/50 rounded px-2.5 py-0.5 text-sm transition-colors shrink-0"
+                                                                className="text-primary hover:text-primary-text hover:bg-app-surface-soft/80 rounded px-2.5 py-0.5 text-sm transition-colors shrink-0"
                                                             >
                                                                 {isExpanded ? 'Hide' : 'Edit'}
                                                             </button>
@@ -798,7 +798,7 @@ export function GroceryListContent({
                                                     </div>
 
                                                     {isExpanded ? (
-                                                        <ul className="space-y-1.5 pl-2 border-l border-slate-700/70">
+                                                        <ul className="space-y-1.5 pl-2 border-l border-app-border/70">
                                                             {entry.items.map((item) => {
                                                                 const itemWithOptimisticChecked = {
                                                                     ...item,

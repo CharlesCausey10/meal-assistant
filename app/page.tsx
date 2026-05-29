@@ -21,11 +21,11 @@ export default async function Home({
     // Handle ingredient edit tab separately (not in main navigation)
     if (params.tab === 'ingredients') {
         return (
-            <div className="h-screen flex flex-col bg-slate-900">
-                <div className="shrink-0 border-b border-purple-500/30 p-4">
+            <div className="h-screen flex flex-col bg-app-bg">
+                <div className="shrink-0 border-b border-primary/30 p-4">
                     <a
                         href={`/?tab=grocery${params.listId ? `&listId=${params.listId}` : ''}`}
-                        className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors mb-4"
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary-text transition-colors mb-4"
                     >
                         <span>←</span>
                         <span>Back to Grocery</span>

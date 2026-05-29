@@ -41,10 +41,10 @@ export function MealForm({ onSuccess }: MealFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-3">
-            <input name="name" placeholder="Meal name" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500" required />
-            <input name="recipeUrl" placeholder="Recipe URL (optional)" type="url" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500" />
+            <input name="name" placeholder="Meal name" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle" required />
+            <input name="recipeUrl" placeholder="Recipe URL (optional)" type="url" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <select name="protein" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100">
+                <select name="protein" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text">
                     <option value="">Protein (optional)</option>
                     <option value="CHICKEN_BREAST">🐔 Chicken Breast</option>
                     <option value="CHICKEN_THIGHS">🐔 Chicken Thighs</option>
@@ -54,7 +54,7 @@ export function MealForm({ onSuccess }: MealFormProps) {
                     <option value="FISH">🐟 Fish</option>
                     <option value="EGGS">🥚 Eggs</option>
                 </select>
-                <select name="category" className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100" required defaultValue="">
+                <select name="category" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text" required defaultValue="">
                     <option value="" disabled>Select category</option>
                     <option value="BREAKFAST">Breakfast</option>
                     <option value="LUNCH">Lunch</option>
@@ -66,7 +66,7 @@ export function MealForm({ onSuccess }: MealFormProps) {
                 <PreferenceInput padSize="md" />
             </div>
             <IngredientInput onIngredientsChange={setIngredients} />
-            <button type="submit" className="bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/20 w-full">
+            <button type="submit" className="bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast px-6 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-primary/20 w-full">
                 Add Meal
             </button>
         </form>

@@ -48,7 +48,7 @@ export function MealSelector({ meals }: MealSelectorProps) {
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search meals..."
-                className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100 text-sm"
+                className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text text-sm"
             />
 
             {/* Keep selected meals submitted even when filtered out of view. */}
@@ -56,28 +56,28 @@ export function MealSelector({ meals }: MealSelectorProps) {
                 <input key={mealId} type="hidden" name="mealIds" value={mealId} />
             ))}
 
-            <div className="border border-slate-600 rounded-lg p-3 bg-slate-900/50 max-h-60 overflow-y-auto space-y-2">
+            <div className="border border-app-border rounded-lg p-3 bg-app-surface/70 max-h-60 overflow-y-auto space-y-2">
                 {meals.length === 0 && (
-                    <p className="text-sm text-slate-400">No meals available yet. Submitting will create an empty list.</p>
+                    <p className="text-sm text-app-subtle">No meals available yet. Submitting will create an empty list.</p>
                 )}
 
                 {meals.length > 0 && filteredMeals.length === 0 && (
-                    <p className="text-sm text-slate-400">No meals match your search.</p>
+                    <p className="text-sm text-app-subtle">No meals match your search.</p>
                 )}
 
                 {filteredMeals.map((meal) => (
                     <label
                         key={meal.id}
-                        className="flex items-center gap-2 text-sm text-slate-200 hover:bg-slate-800/60 rounded p-1"
+                        className="flex items-center gap-2 text-sm text-app-text/85 hover:bg-app-surface/85 rounded p-1"
                     >
                         <input
                             type="checkbox"
                             checked={selectedMealIds.includes(meal.id)}
                             onChange={() => toggleMeal(meal.id)}
-                            className="h-4 w-4 accent-purple-500"
+                            className="h-4 w-4 accent-primary"
                         />
                         <span className="font-medium">{meal.name}</span>
-                        <span className="text-slate-400">({meal.categoryLabel})</span>
+                        <span className="text-app-subtle">({meal.categoryLabel})</span>
                     </label>
                 ))}
             </div>

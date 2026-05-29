@@ -66,8 +66,8 @@ export function IngredientEditContent({
     return (
         <div className="h-full flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="shrink-0 p-4 sm:p-6 border-b border-slate-700">
-                <h2 className="text-2xl font-bold text-slate-100 mb-4">✏️ Edit Ingredients</h2>
+            <div className="shrink-0 p-4 sm:p-6 border-b border-app-border">
+                <h2 className="text-2xl font-bold text-app-text mb-4">✏️ Edit Ingredients</h2>
 
                 {isCreating ? (
                     <form action={handleCreate} className="space-y-3">
@@ -78,7 +78,7 @@ export function IngredientEditContent({
                                 placeholder="Ingredient name"
                                 value={newIngredientName}
                                 onChange={(e) => setNewIngredientName(e.target.value)}
-                                className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg bg-slate-900/80 text-slate-100"
+                                className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg bg-app-surface-raised/90 text-app-text"
                                 autoFocus
                                 required
                             />
@@ -88,7 +88,7 @@ export function IngredientEditContent({
                                 onChange={(e) =>
                                     setNewIngredientCategory(e.target.value as IngredientCategory)
                                 }
-                                className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg bg-slate-900/80 text-slate-100"
+                                className="border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg bg-app-surface-raised/90 text-app-text"
                             >
                                 {ingredientCategories.map((cat) => (
                                     <option key={cat} value={cat}>
@@ -98,7 +98,7 @@ export function IngredientEditContent({
                             </select>
                             <button
                                 type="submit"
-                                className="bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-2 rounded-lg font-medium transition-all whitespace-nowrap"
+                                className="bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast px-6 py-2 rounded-lg font-medium transition-all whitespace-nowrap"
                             >
                                 Add
                             </button>
@@ -110,7 +110,7 @@ export function IngredientEditContent({
                                 setNewIngredientName('')
                                 setNewIngredientCategory('OTHER')
                             }}
-                            className="text-slate-400 hover:text-slate-300 text-sm"
+                            className="text-app-subtle hover:text-app-muted text-sm"
                         >
                             Cancel
                         </button>
@@ -118,7 +118,7 @@ export function IngredientEditContent({
                 ) : (
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                        className="bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast px-4 py-2 rounded-lg font-medium transition-all"
                     >
                         + Add Ingredient
                     </button>
@@ -130,7 +130,7 @@ export function IngredientEditContent({
                         placeholder="Search ingredients..."
                         value={searchQuery}
                         onChange={(event) => setSearchQuery(event.target.value)}
-                        className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg bg-slate-900/80 text-slate-100"
+                        className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg bg-app-surface-raised/90 text-app-text"
                         aria-label="Search ingredients"
                     />
                 </div>
@@ -139,7 +139,7 @@ export function IngredientEditContent({
             {/* Ingredients List */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                 {filteredIngredients.length === 0 ? (
-                    <div className="h-full grid place-items-center text-slate-400">
+                    <div className="h-full grid place-items-center text-app-subtle">
                         {ingredients.length === 0
                             ? 'No ingredients yet.'
                             : 'No ingredients match your search.'}
@@ -152,7 +152,7 @@ export function IngredientEditContent({
 
                             return (
                                 <div key={category} className="space-y-2">
-                                    <h3 className="text-lg font-semibold text-purple-300">
+                                    <h3 className="text-lg font-semibold text-primary-text">
                                         {formatLabel(category)}
                                     </h3>
                                     <ul className="space-y-1">
@@ -161,7 +161,7 @@ export function IngredientEditContent({
                                                 {editingId === ingredient.id ? (
                                                     <form
                                                         action={handleEditSubmit}
-                                                        className="flex flex-col gap-2 bg-slate-800/80 p-3 rounded-lg border border-purple-500/50"
+                                                        className="flex flex-col gap-2 bg-app-surface/95 p-3 rounded-lg border border-primary/50"
                                                     >
                                                         <input
                                                             type="hidden"
@@ -174,7 +174,7 @@ export function IngredientEditContent({
                                                                 name="name"
                                                                 value={editName}
                                                                 onChange={(e) => setEditName(e.target.value)}
-                                                                className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                                                                className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                                                                 required
                                                                 autoFocus
                                                             />
@@ -186,7 +186,7 @@ export function IngredientEditContent({
                                                                         e.target.value as IngredientCategory
                                                                     )
                                                                 }
-                                                                className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded bg-slate-900/80 text-slate-100"
+                                                                className="border border-app-border focus:border-primary focus:outline-none p-2 rounded bg-app-surface-raised/90 text-app-text"
                                                             >
                                                                 {ingredientCategories.map((cat) => (
                                                                     <option key={cat} value={cat}>
@@ -198,28 +198,28 @@ export function IngredientEditContent({
                                                         <div className="flex gap-2">
                                                             <button
                                                                 type="submit"
-                                                                className="flex-1 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition-all"
+                                                                className="flex-1 bg-linear-to-r from-info to-info-hover hover:from-info-hover hover:to-info-hover text-primary-contrast px-3 py-2 rounded text-sm font-medium transition-all"
                                                             >
                                                                 Save
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={handleEditCancel}
-                                                                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded text-sm font-medium transition-all"
+                                                                className="flex-1 bg-app-surface-soft hover:bg-app-border-strong text-primary-contrast px-3 py-2 rounded text-sm font-medium transition-all"
                                                             >
                                                                 Cancel
                                                             </button>
                                                         </div>
                                                     </form>
                                                 ) : (
-                                                    <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors">
-                                                        <span className="text-slate-200">
+                                                    <div className="flex items-center justify-between bg-app-surface/80 p-3 rounded-lg border border-app-border hover:border-app-border transition-colors">
+                                                        <span className="text-app-text/85">
                                                             {ingredient.name}
                                                         </span>
                                                         <div className="flex items-center gap-2">
                                                             <button
                                                                 onClick={() => handleEditStart(ingredient)}
-                                                                className="text-indigo-400 hover:text-indigo-300 hover:bg-slate-700/50 rounded-lg px-3 py-1 text-sm transition-colors"
+                                                                className="text-info hover:text-info-hover hover:bg-app-surface-soft/80 rounded-lg px-3 py-1 text-sm transition-colors"
                                                                 aria-label={`Edit ${ingredient.name}`}
                                                             >
                                                                 Edit
@@ -232,7 +232,7 @@ export function IngredientEditContent({
                                                                 />
                                                                 <button
                                                                     type="submit"
-                                                                    className="text-rose-400 hover:text-rose-300 hover:bg-slate-700/50 rounded-lg px-3 py-1 text-sm transition-colors"
+                                                                    className="text-danger hover:text-danger-hover hover:bg-app-surface-soft/80 rounded-lg px-3 py-1 text-sm transition-colors"
                                                                     aria-label={`Delete ${ingredient.name}`}
                                                                 >
                                                                     Delete

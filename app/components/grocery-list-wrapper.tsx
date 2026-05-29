@@ -59,7 +59,7 @@ export function GroceryListWrapper({
 
             <div className="flex-1 overflow-y-auto p-4">
                 {!serializedSelectedList ? (
-                    <div className="h-full grid place-items-center text-slate-400">
+                    <div className="h-full grid place-items-center text-app-subtle">
                         Select or create a grocery list.
                     </div>
                 ) : (

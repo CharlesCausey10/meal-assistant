@@ -129,12 +129,12 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
 
     return (
         <div className="h-full flex flex-col md:flex-row">
-            <div className="md:hidden p-3 border-b border-purple-500/20 flex gap-2">
+            <div className="md:hidden p-3 border-b border-primary/20 flex gap-2">
                 <button
                     type="button"
                     disabled={!searchValue}
                     onClick={() => handleSearchChange('')}
-                    className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg p-2 transition-colors disabled:text-slate-600 disabled:hover:bg-transparent"
+                    className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors disabled:text-app-subtle/60 disabled:hover:bg-transparent"
                     aria-label="Clear search"
                 >
                     ✕
@@ -144,26 +144,26 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
                     placeholder="Search meals..."
                     value={searchValue}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="flex-1 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base placeholder-slate-400"
+                    className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base placeholder-app-subtle"
                 />
                 <button
                     type="button"
                     onClick={() => setIsNewMealOpen(true)}
-                    className="bg-linear-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-lg font-medium text-xl"
+                    className="bg-linear-to-r from-primary to-primary-hover text-primary-contrast px-3 py-2 rounded-lg font-medium text-xl"
                 >
                     +
                 </button>
             </div>
 
             <div className="hidden md:flex md:w-1/2 md:flex-col md:p-4">
-                <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-purple-500/30">
-                    <h2 className="text-lg font-semibold text-purple-200 mb-3">Add New Meal</h2>
+                <div className="bg-app-surface p-6 rounded-xl shadow-lg border border-primary/30">
+                    <h2 className="text-lg font-semibold text-primary-text mb-3">Add New Meal</h2>
                     <MealForm />
                 </div>
             </div>
 
             <div className="flex-1 md:w-1/2 flex flex-col gap-4 p-4 overflow-hidden">
-                {/* <div className="bg-slate-800 p-4 rounded-xl border border-purple-500/30 shrink-0"> */}
+                {/* <div className="bg-app-surface p-4 rounded-xl border border-primary/30 shrink-0"> */}
                 <Filters
                     searchValue={searchValue}
                     onSearchChange={handleSearchChange}
@@ -177,7 +177,7 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
                     {filteredMeals.length > 0 ? (
                         <MealList meals={filteredMeals} groceryLists={groceryLists} />
                     ) : (
-                        <div className="h-full grid place-items-center text-slate-400">
+                        <div className="h-full grid place-items-center text-app-subtle">
                             {meals.length === 0 ? 'No meals yet.' : 'No meals match your search.'}
                         </div>
                     )}

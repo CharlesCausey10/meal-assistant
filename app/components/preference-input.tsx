@@ -12,10 +12,10 @@ interface PreferenceInputProps {
 export function PreferenceInput({ 
     name = 'preference',
     defaultValue = '',
-    className = 'border border-slate-600 focus:border-purple-400 focus:outline-none p-3 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500',
+    className = 'border border-app-border focus:border-primary focus:outline-none p-3 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle',
     padSize = 'md'
 }: PreferenceInputProps) {
-    const baseClass = 'border border-slate-600 focus:border-purple-400 focus:outline-none w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 placeholder-slate-500';
+    const baseClass = 'border border-app-border focus:border-primary focus:outline-none w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle';
     const padding = padSize === 'sm' ? 'p-2 text-sm' : 'p-2';
     const defaultClass = `${baseClass} ${padding}`;
 

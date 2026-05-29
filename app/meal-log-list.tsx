@@ -26,13 +26,13 @@ function getDaysSinceCooking(cookedAt: Date): number {
 function getStatusColor(status: string) {
     switch (status) {
         case 'fresh':
-            return 'text-green-400'
+            return 'text-success'
         case 'expiring-soon':
-            return 'text-yellow-400'
+            return 'text-warning'
         case 'expired':
-            return 'text-red-400'
+            return 'text-danger'
         default:
-            return 'text-slate-400'
+            return 'text-app-subtle'
     }
 }
 
@@ -60,7 +60,7 @@ export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
     return (
         <div className="space-y-3">
             {sortedMealLogs.length === 0 ? (
-                <div className="text-center py-8 text-slate-400">
+                <div className="text-center py-8 text-app-subtle">
                     No cooked meals logged yet
                 </div>
             ) : (
@@ -75,20 +75,20 @@ export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
                         return (
                             <li
                                 key={meal.id}
-                                className={`bg-slate-800/50 backdrop-blur-sm border p-4 rounded-xl flex justify-between items-center hover:shadow-lg transition-all ${status === 'expired'
-                                    ? 'border-red-500/30 hover:shadow-red-500/10'
+                                className={`bg-app-surface/80 backdrop-blur-sm border p-4 rounded-xl flex justify-between items-center hover:shadow-lg transition-all ${status === 'expired'
+                                    ? 'border-danger/40 hover:shadow-danger/10'
                                     : status === 'expiring-soon'
-                                        ? 'border-yellow-500/30 hover:shadow-yellow-500/10'
-                                        : 'border-purple-500/20 hover:shadow-purple-500/10'
+                                        ? 'border-warning/40 hover:shadow-warning/10'
+                                        : 'border-primary/20 hover:shadow-primary/10'
                                     }`}
                             >
                                 <div>
-                                    <div className="font-semibold text-slate-100 text-lg flex items-center gap-2">
+                                    <div className="font-semibold text-app-text text-lg flex items-center gap-2">
                                         <span>{getProteinEmoji(meal.protein)}</span>
                                         <span>{meal.name}</span>
                                     </div>
-                                    <div className="text-sm text-slate-300">
-                                        <span className="text-slate-400">{daysSince === 0 ? 'Today' : `${daysSince} day${daysSince !== 1 ? 's' : ''} ago`}</span>
+                                    <div className="text-sm text-app-muted">
+                                        <span className="text-app-subtle">{daysSince === 0 ? 'Today' : `${daysSince} day${daysSince !== 1 ? 's' : ''} ago`}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -101,7 +101,7 @@ export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
                                         <input type="hidden" name="id" value={meal.id} />
                                         <button
                                             type="submit"
-                                            className="text-rose-400 hover:text-rose-300 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+                                            className="text-danger hover:text-danger-hover hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors"
                                             aria-label="Delete meal log"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -74,7 +74,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
         <>
             <ul className="space-y-3">
                 {meals.map(meal => (
-                    <li key={meal.id} className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 p-4 rounded-xl hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-500/40 transition-all">
+                    <li key={meal.id} className="bg-app-surface/80 backdrop-blur-sm border border-primary/20 p-4 rounded-xl hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40 transition-all">
                         {editingId === meal.id ? (
                             <form onSubmit={(e) => {
                                 e.preventDefault()
@@ -91,7 +91,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     name="name"
                                     defaultValue={meal.name}
                                     placeholder="Meal name"
-                                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
+                                    className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
                                     required
                                 />
                                 <input
@@ -99,13 +99,13 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     defaultValue={meal.recipeUrl || ''}
                                     placeholder="Recipe URL (optional)"
                                     type="url"
-                                    className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
+                                    className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
                                 />
                                 <div className="grid grid-cols-3 gap-2">
                                     <select
                                         name="protein"
                                         defaultValue={meal.protein || ''}
-                                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
+                                        className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
                                     >
                                         <option value="">Protein (optional)</option>
                                         <option value="CHICKEN_BREAST">🐔 Chicken Breast</option>
@@ -119,7 +119,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     <select
                                         name="category"
                                         defaultValue={meal.category}
-                                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 w-full rounded-lg transition-colors bg-slate-900/80 text-slate-100 text-base"
+                                        className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
                                         required
                                     >
                                         <option value="BREAKFAST">Breakfast</option>
@@ -142,7 +142,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                 <div className="flex gap-2">
                                     <button
                                         type="submit"
-                                        className="bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                        className="bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast px-4 py-2 rounded-lg text-sm font-medium transition-all"
                                     >
                                         Save
                                     </button>
@@ -152,7 +152,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                             setEditingId(null)
                                             setEditingIngredients([])
                                         }}
-                                        className="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                        className="bg-app-surface-soft hover:bg-app-border-strong text-app-text/85 px-4 py-2 rounded-lg text-sm font-medium transition-all"
                                     >
                                         Cancel
                                     </button>
@@ -164,13 +164,13 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                 {/* Title Row */}
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <div className="font-semibold text-slate-100 text-lg">{meal.name}</div>
+                                        <div className="font-semibold text-app-text text-lg">{meal.name}</div>
 
-                                        <div className="text-sm text-purple-300">
+                                        <div className="text-sm text-primary-text">
                                             {`${meal.protein ? getProteinEmoji(meal.protein) + ' ' : ''}${meal.protein ? formatProtein(meal.protein) + ' • ' : ''}${formatCategory(meal.category)}`}
 
                                             {meal.preference && (
-                                                <span className="ml-2 text-xs text-slate-400">
+                                                <span className="ml-2 text-xs text-app-subtle">
                                                     {meal.preference}/10
                                                 </span>
                                             )}
@@ -190,7 +190,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                                     }))
                                                 )
                                             }}
-                                            className="text-purple-400 hover:text-purple-300 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+                                            className="text-primary hover:text-primary-text hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors"
                                             aria-label="Edit meal"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -202,7 +202,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                             <input type="hidden" name="id" value={meal.id} />
                                             <button
                                                 type="submit"
-                                                className="text-rose-400 hover:text-rose-300 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+                                                className="text-danger hover:text-danger-hover hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors"
                                                 aria-label="Delete meal"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -218,7 +218,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     <a
                                         href={meal.recipeUrl}
                                         target="_blank"
-                                        className="flex items-center gap-2 text-cyan-300 hover:text-cyan-200 transition-colors"
+                                        className="flex items-center gap-2 text-info hover:text-info-hover transition-colors"
                                     >
                                         📖 View Recipe →
                                     </a>
@@ -226,7 +226,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
 
                                 {/* Ingredient Dropdown */}
                                 {meal.ingredients.length > 0 && (
-                                    <div className="bg-slate-700/40 rounded-lg border border-slate-600/40">
+                                    <div className="bg-app-surface-soft/70 rounded-lg border border-app-border/60">
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -238,7 +238,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                                 }
                                                 setExpandedIngredients(newExpanded)
                                             }}
-                                            className="w-full flex justify-between items-center px-3 py-2 text-sm text-slate-200 hover:bg-slate-700/50 rounded-lg"
+                                            className="w-full flex justify-between items-center px-3 py-2 text-sm text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg"
                                         >
                                             <span>
                                                 {expandedIngredients.has(meal.id) ? '▾' : '▸'} Ingredients ({meal.ingredients.length})
@@ -246,7 +246,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                         </button>
 
                                         {expandedIngredients.has(meal.id) && (
-                                            <div className="px-4 pb-3 text-sm text-slate-300 space-y-1">
+                                            <div className="px-4 pb-3 text-sm text-app-muted space-y-1">
                                                 {meal.ingredients.map(ing => (
                                                     <div key={ing.id}>
                                                         • {String(ing.quantity)} {ing.unit} {ing.ingredient.name}
@@ -261,7 +261,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                 <div className="mt-2 flex items-center gap-2">
                                     <button
                                         onClick={() => setLoggingMealId(meal.id)}
-                                        className="flex-1 flex items-center justify-center gap-2 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 rounded-xl font-semibold transition-all shadow-lg shadow-purple-500/20"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast py-3 rounded-xl font-semibold transition-all shadow-lg shadow-primary/20"
                                     >
                                         <CookingAnimation hoverOnly />
                                         Cook
@@ -269,7 +269,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     <button
                                         type="button"
                                         onClick={() => setAddingToListMealId(meal.id)}
-                                        className="shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-100 px-4 py-3 rounded-xl font-semibold transition-colors border border-slate-600"
+                                        className="shrink-0 bg-app-surface-soft hover:bg-app-border-strong text-app-text px-4 py-3 rounded-xl font-semibold transition-colors border border-app-border"
                                     >
                                         Add to List
                                     </button>
@@ -296,16 +296,16 @@ export function MealList({ meals, groceryLists }: MealListProps) {
             >
                 {selectedAddToListMeal ? (
                     <div className="space-y-3">
-                        <p className="text-sm text-slate-300">
-                            Add <span className="font-semibold text-slate-100">{selectedAddToListMeal.name}</span> to:
+                        <p className="text-sm text-app-muted">
+                            Add <span className="font-semibold text-app-text">{selectedAddToListMeal.name}</span> to:
                         </p>
 
                         {groceryLists.length === 0 ? (
                             <div className="space-y-2">
-                                <p className="text-sm text-slate-400">No grocery lists yet.</p>
+                                <p className="text-sm text-app-subtle">No grocery lists yet.</p>
                                 <a
                                     href="/?tab=grocery"
-                                    className="inline-block text-sm text-purple-300 hover:text-purple-200"
+                                    className="inline-block text-sm text-primary-text hover:text-primary-text"
                                 >
                                     Go to Grocery tab to create one
                                 </a>
@@ -327,7 +327,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                         <input type="hidden" name="groceryListId" value={list.id} />
                                         <button
                                             type="submit"
-                                            className="w-full text-left p-3 bg-slate-800/70 hover:bg-slate-700/70 rounded-lg text-slate-100 transition-colors border border-slate-600"
+                                            className="w-full text-left p-3 bg-app-surface/90 hover:bg-app-surface-soft/70 rounded-lg text-app-text transition-colors border border-app-border"
                                         >
                                             {list.name}
                                         </button>

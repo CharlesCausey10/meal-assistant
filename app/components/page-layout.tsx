@@ -77,9 +77,9 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     }
 
     return (
-        <div className="h-dvh flex flex-col bg-slate-900">
+        <div className="h-dvh flex flex-col bg-app-bg">
             <h1 className="sr-only">{title}</h1>
-            <div className="shrink-0 border-b border-purple-500/30">
+            <div className="shrink-0 border-b border-primary/30">
                 <div className="max-w-7xl mx-auto">
                     {/* Tab Navigation */}
                     <div className="flex gap-4 pb-0">
@@ -89,8 +89,8 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
                                 onClick={() => handleTabChange(tab.id)}
                                 className={`px-4 py-2 font-medium transition-colors ${
                                     activeTab === tab.id
-                                        ? 'text-purple-400 border-b-2 border-purple-500'
-                                        : 'text-slate-400 hover:text-slate-300'
+                                        ? 'text-primary border-b-2 border-primary'
+                                        : 'text-app-subtle hover:text-app-muted'
                                 }`}
                             >
                                 {tab.label}
@@ -112,7 +112,7 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
 
 export function PageLayout({ title, tabs }: PageLayoutProps) {
     return (
-        <Suspense fallback={<div className="h-screen flex items-center justify-center bg-slate-900 text-slate-400">Loading...</div>}>
+        <Suspense fallback={<div className="h-screen flex items-center justify-center bg-app-bg text-app-subtle">Loading...</div>}>
             <PageLayoutContent title={title} tabs={tabs} />
         </Suspense>
     )

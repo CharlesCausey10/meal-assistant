@@ -223,7 +223,7 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
 
 - Global styles live in `app/globals.css`.
 - Tailwind CSS 4 is configured through `postcss.config.mjs`.
-- The visual design is a dark slate UI with purple accents.
+- The visual design uses warm, naturally occurring color tokens defined in `app/globals.css` and exposed to Tailwind through `@theme inline`. Prefer semantic classes such as `bg-app-surface`, `text-app-text`, `border-app-border`, `bg-primary`, `text-primary-text`, `text-danger`, and `bg-warning-soft` over hard-coded hex values or raw color-family utilities.
 - Several components use emoji labels and inline SVG icons directly rather than an icon library.
 - The layout is responsive: desktop uses sidebars/forms, while mobile often opens `ResponsiveModal` controls.
 

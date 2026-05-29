@@ -134,19 +134,19 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
     const commonUnits = ['whole', 'piece', 'tsp', 'tbsp', 'cup', 'oz', 'lb', 'stick', 'pack']
 
     return (
-        <div className="space-y-3 border border-slate-600 p-4 rounded-lg bg-slate-900/50">
-            <h3 className="text-sm font-semibold text-slate-200">Ingredients</h3>
+        <div className="space-y-3 border border-app-border p-4 rounded-lg bg-app-surface/70">
+            <h3 className="text-sm font-semibold text-app-text/85">Ingredients</h3>
 
             {/* Ingredient list */}
             {ingredients.length > 0 && (
-                <div className="space-y-2 bg-slate-800/50 p-3 rounded">
+                <div className="space-y-2 bg-app-surface/80 p-3 rounded">
                     {ingredients.map(ing => (
-                        <div key={ing.id} className="flex justify-between items-center text-sm text-slate-300 bg-slate-900/50 p-2 rounded">
+                        <div key={ing.id} className="flex justify-between items-center text-sm text-app-muted bg-app-surface/70 p-2 rounded">
                             <span>{ing.quantity} {ing.unit} {ing.name}</span>
                             <button
                                 type="button"
                                 onClick={() => handleRemoveIngredient(ing.id)}
-                                className="text-rose-400 hover:text-rose-300 text-xs"
+                                className="text-danger hover:text-danger-hover text-xs"
                             >
                                 Remove
                             </button>
@@ -169,17 +169,17 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                                 setIsOpen(true)
                             }}
                             onFocus={() => setIsOpen(true)}
-                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
+                            className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded text-base bg-app-surface-raised/90 text-app-text"
                         />
                         
                         {isOpen && filteredIngredients.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded shadow-lg z-10 max-h-48 overflow-y-auto">
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-app-surface border border-app-border rounded shadow-lg z-10 max-h-48 overflow-y-auto">
                                 {filteredIngredients.map(ing => (
                                     <button
                                         key={ing.id}
                                         type="button"
                                         onClick={() => handleSelectIngredient(ing)}
-                                        className="w-full text-left px-3 py-2 hover:bg-slate-700 text-slate-100 text-sm transition-colors"
+                                        className="w-full text-left px-3 py-2 hover:bg-app-surface-soft text-app-text text-sm transition-colors"
                                     >
                                         {ing.name}
                                     </button>
@@ -190,7 +190,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                     <button
                         type="button"
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-slate-700 hover:bg-slate-600 text-slate-100 px-3 py-2 rounded text-sm font-medium transition-colors"
+                        className="bg-app-surface-soft hover:bg-app-border-strong text-app-text px-3 py-2 rounded text-sm font-medium transition-colors"
                         title="Add new ingredient"
                     >
                         +
@@ -201,12 +201,12 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                         value={newQuantity}
                         onChange={(e) => setNewQuantity(e.target.value)}
                         step="0.1"
-                        className="w-16 border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
+                        className="w-16 border border-app-border focus:border-primary focus:outline-none p-2 rounded text-base bg-app-surface-raised/90 text-app-text"
                     />
                     <select
                         value={newUnit}
                         onChange={(e) => setNewUnit(e.target.value)}
-                        className="border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
+                        className="border border-app-border focus:border-primary focus:outline-none p-2 rounded text-base bg-app-surface-raised/90 text-app-text"
                     >
                         {commonUnits.map(unit => (
                             <option key={unit} value={unit}>{unit}</option>
@@ -217,7 +217,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                 <button
                     type="button"
                     onClick={handleAddIngredient}
-                    className="w-full bg-slate-700 hover:bg-slate-600 text-slate-100 px-3 py-2 rounded text-sm font-medium transition-colors"
+                    className="w-full bg-app-surface-soft hover:bg-app-border-strong text-app-text px-3 py-2 rounded text-sm font-medium transition-colors"
                 >
                     Add Ingredient
                 </button>
@@ -226,7 +226,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
             <ResponsiveModal title="Add New Ingredient" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <div className="space-y-3">
                     <div>
-                        <label htmlFor="ingredient-name" className="block text-sm font-medium text-slate-200 mb-1">
+                        <label htmlFor="ingredient-name" className="block text-sm font-medium text-app-text/85 mb-1">
                             Ingredient Name
                         </label>
                         <input
@@ -235,18 +235,18 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                             placeholder="e.g., Broccoli"
                             value={newIngredientName}
                             onChange={(e) => setNewIngredientName(e.target.value)}
-                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
+                            className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded text-base bg-app-surface-raised/90 text-app-text"
                         />
                     </div>
                     <div>
-                        <label htmlFor="ingredient-category" className="block text-sm font-medium text-slate-200 mb-1">
+                        <label htmlFor="ingredient-category" className="block text-sm font-medium text-app-text/85 mb-1">
                             Category
                         </label>
                         <select
                             id="ingredient-category"
                             value={newIngredientCategory}
                             onChange={(e) => setNewIngredientCategory(e.target.value)}
-                            className="w-full border border-slate-600 focus:border-purple-400 focus:outline-none p-2 rounded text-base bg-slate-900/80 text-slate-100"
+                            className="w-full border border-app-border focus:border-primary focus:outline-none p-2 rounded text-base bg-app-surface-raised/90 text-app-text"
                         >
                             <option value="OTHER">Other</option>
                             <option value="DAIRY">Dairy</option>
@@ -270,7 +270,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
                         type="button"
                         onClick={handleCreateIngredient}
                         disabled={!newIngredientName.trim() || isCreatingIngredient}
-                        className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-slate-100 px-3 py-2 rounded text-sm font-medium transition-colors"
+                        className="w-full bg-primary hover:bg-primary disabled:bg-app-border-strong disabled:cursor-not-allowed text-app-text px-3 py-2 rounded text-sm font-medium transition-colors"
                     >
                         {isCreatingIngredient ? 'Creating...' : 'Create Ingredient'}
                     </button>

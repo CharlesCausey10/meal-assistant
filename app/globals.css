@@ -1,10 +1,76 @@
 @import "tailwindcss";
 
+:root {
+  --app-bg: #f7f2ea;
+  --app-surface: #fffaf3;
+  --app-surface-soft: #f1e7d8;
+  --app-surface-raised: white;
+  --app-text: #332d26;
+  --app-muted: #7b6f63;
+  --app-subtle: #a39484;
+  --app-border: #d8c8b4;
+  --app-border-strong: #bca98f;
+  --app-primary: #557a46;
+  --app-primary-hover: #466a38;
+  --app-primary-soft: #e4eddb;
+  --app-primary-text: #2f4a27;
+  --app-primary-contrast: var(--app-surface);
+  --app-accent: #b7654f;
+  --app-accent-hover: #9f533f;
+  --app-accent-soft: #f1dfd5;
+  --app-info: #557d8a;
+  --app-info-hover: #456b77;
+  --app-success: var(--app-primary);
+  --app-success-soft: var(--app-primary-soft);
+  --app-warning: #b88934;
+  --app-warning-soft: #f6e8c8;
+  --app-danger: #a74f45;
+  --app-danger-hover: #8d4038;
+  --app-danger-soft: #f2d7d1;
+  --app-backdrop: #332d2699;
+  --background: var(--app-bg);
+  --foreground: var(--app-text);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-app-bg: var(--app-bg);
+  --color-app-surface: var(--app-surface);
+  --color-app-surface-soft: var(--app-surface-soft);
+  --color-app-surface-raised: var(--app-surface-raised);
+  --color-app-text: var(--app-text);
+  --color-app-muted: var(--app-muted);
+  --color-app-subtle: var(--app-subtle);
+  --color-app-border: var(--app-border);
+  --color-app-border-strong: var(--app-border-strong);
+  --color-primary: var(--app-primary);
+  --color-primary-hover: var(--app-primary-hover);
+  --color-primary-soft: var(--app-primary-soft);
+  --color-primary-text: var(--app-primary-text);
+  --color-primary-contrast: var(--app-primary-contrast);
+  --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
+  --color-accent-soft: var(--app-accent-soft);
+  --color-info: var(--app-info);
+  --color-info-hover: var(--app-info-hover);
+  --color-success: var(--app-success);
+  --color-success-soft: var(--app-success-soft);
+  --color-warning: var(--app-warning);
+  --color-warning-soft: var(--app-warning-soft);
+  --color-danger: var(--app-danger);
+  --color-danger-hover: var(--app-danger-hover);
+  --color-danger-soft: var(--app-danger-soft);
+  --color-app-backdrop: var(--app-backdrop);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 /* Custom scrollbar styling */
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #6b21a8 #1e293b;
+  scrollbar-color: var(--app-primary) var(--app-surface-soft);
 }
 
 /* Chrome, Safari, Edge */
@@ -14,16 +80,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: var(--app-surface-soft);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #6b21a8;
+  background: var(--app-primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #7e22ce;
+  background: var(--app-primary-hover);
 }
 
 /* Utility: hide scrollbars on specific scroll containers while keeping scroll enabled */
@@ -41,25 +107,6 @@
 /* Utility: account for mobile browser UI (Chrome address bar, etc) */
 .h-dvh {
   height: 100dvh;
-}
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

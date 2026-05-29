@@ -22,17 +22,17 @@ export function ResponsiveModal({ title, isOpen, onClose, children, position = '
             <button
                 type="button"
                 onClick={onClose}
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                className="absolute inset-0 bg-app-backdrop backdrop-blur-sm"
                 aria-label="Close modal"
             />
             <div className={`absolute inset-x-0 ${position === 'top' ? 'top-0' : 'bottom-0'} md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none`}>
-                <div className={`pointer-events-auto bg-slate-900 border border-purple-500/30 ${positionClasses} md:rounded-xl shadow-2xl w-full max-h-[85vh] overflow-y-auto md:max-w-md`}>
-                    <div className="flex items-center justify-between p-4 border-b border-purple-500/20">
-                        <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
+                <div className={`pointer-events-auto bg-app-bg border border-primary/30 ${positionClasses} md:rounded-xl shadow-2xl w-full max-h-[85vh] overflow-y-auto md:max-w-md`}>
+                    <div className="flex items-center justify-between p-4 border-b border-primary/20">
+                        <h3 className="text-lg font-semibold text-app-text">{title}</h3>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+                            className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors"
                             aria-label="Close modal"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
