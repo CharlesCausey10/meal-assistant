@@ -8,8 +8,8 @@ Meal Planner is a full-stack Next.js App Router application for managing meals, 
 
 The app is organized around four user-facing areas:
 
-- Meals: create, edit, delete, filter, and browse meal templates with ingredients.
-- Meal log: record cooked meals and display freshness/expiration status.
+- Recipes: create, edit, delete, filter, and browse meal templates with ingredients; cook links a `MealLog` via `mealId`.
+- Leftovers: record cooked meals and display freshness/expiration status; removing an entry sets `MealLog.isActive` to false.
 - Grocery lists: create lists from selected meals, aggregate meal ingredients, manually add/edit/check off items, copy lists, and hide checked/amounts.
 - Ingredients: maintain the reusable ingredient catalog used by meals and grocery lists.
 
@@ -81,7 +81,7 @@ Models:
 - `Meal`: meal template with optional protein, required category, optional preference, notes, recipe URL, meal ingredients, and grocery-list uses.
 - `Ingredient`: reusable ingredient catalog entry with unique `name` and category.
 - `MealIngredient`: join table between meals and ingredients, with `quantity` and `unit`; unique per `(mealId, ingredientId)`.
-- `MealLog`: cooked-meal log entry with name, optional protein, and cooked date.
+- `MealLog`: cooked-meal log entry with name, optional protein, cooked date, optional `mealId` (recipe link), and `isActive` (soft delete).
 - `GroceryList`: saved grocery list with notes, items, source meals, created/updated timestamps.
 - `GroceryListMeal`: join table tracking which meals contributed to a grocery list.
 - `GroceryListItem`: grocery item snapshot with optional ingredient link, quantity, unit, note, checked state, category, and sort order.
@@ -93,12 +93,12 @@ Migrations live in `prisma/migrations/`. Notable migrations add the base schema,
 ### Routing Entry Points
 
 - `app/layout.tsx`: root HTML/body wrapper and global metadata.
-- `app/page.tsx`: main server component for `/`. It reads `searchParams`, routes the special `?tab=ingredients` view, and otherwise renders the tabbed page layout with Meals, Log, and Grocery tabs.
+- `app/page.tsx`: main server component for `/`. It reads `searchParams`, routes the special `?tab=ingredients` view, and otherwise renders the tabbed page layout with Recipes, Leftovers, and Grocery tabs.
 - `app/api/ingredients/route.ts`: API route used by client-side ingredient autocomplete and creation.
 
 The app uses query parameters rather than separate URL routes for most navigation:
 
-- `tab=meals`, `tab=logs`, `tab=grocery`, `tab=ingredients`.
+- `tab=recipes`, `tab=leftovers`, `tab=grocery`, `tab=ingredients` (legacy `tab=meals` and `tab=logs` redirect in `page-layout.tsx`).
 - Meal filters: `search`, `protein`, `category`.
 - Grocery selection: `listId`.
 

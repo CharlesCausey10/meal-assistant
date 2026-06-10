@@ -6,6 +6,7 @@ type MealWithIngredients = Meal & {
 
 export type SerializedMealWithIngredients = Meal & {
     ingredients: Array<Omit<MealIngredient, 'quantity'> & { quantity: number; ingredient: Ingredient }>
+    lastCookedAt: string | null
 }
 
 /**
@@ -13,7 +14,8 @@ export type SerializedMealWithIngredients = Meal & {
  * to Client Components
  */
 export function serializeMeals(
-    meals: MealWithIngredients[]
+    meals: MealWithIngredients[],
+    lastCookedAtByMealId: Map<number, Date> = new Map()
 ): SerializedMealWithIngredients[] {
     return meals.map(meal => ({
         ...meal,
@@ -21,5 +23,6 @@ export function serializeMeals(
             ...ing,
             quantity: typeof ing.quantity === 'number' ? ing.quantity : ing.quantity.toNumber(),
         })),
+        lastCookedAt: lastCookedAtByMealId.get(meal.id)?.toISOString() ?? null,
     }))
 }

@@ -56,6 +56,15 @@ export function MealList({ meals, groceryLists }: MealListProps) {
         return protein.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
     }
 
+    const formatLastCooked = (isoDate: string) => {
+        const cookedAt = new Date(isoDate)
+        return cookedAt.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        })
+    }
+
     const selectedAddToListMeal = meals.find((meal) => meal.id === addingToListMealId) || null
 
     useEffect(() => {
@@ -175,6 +184,11 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                                 </span>
                                             )}
                                         </div>
+                                        {meal.lastCookedAt && (
+                                            <div className="text-xs text-app-subtle mt-1">
+                                                Last cooked: {formatLastCooked(meal.lastCookedAt)}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Kebab Menu */}
@@ -282,6 +296,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
 
             <ResponsiveModal title="Cook Meal" isOpen={loggingMealId !== null} onClose={() => setLoggingMealId(null)}>
                 <MealLogForm
+                    mealId={loggingMealId ?? undefined}
                     defaultName={meals.find(m => m.id === loggingMealId)?.name || ''}
                     defaultProtein={meals.find(m => m.id === loggingMealId)?.protein || ''}
                     onSuccess={() => setLoggingMealId(null)}

@@ -61,7 +61,7 @@ export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
         <div className="space-y-3">
             {sortedMealLogs.length === 0 ? (
                 <div className="text-center py-8 text-app-subtle">
-                    No cooked meals logged yet
+                    No active leftovers yet
                 </div>
             ) : (
                 <ul className="space-y-3">

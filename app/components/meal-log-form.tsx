@@ -8,10 +8,16 @@ import { CookingAnimation } from './cooking-animation'
 interface MealLogFormProps {
     defaultName?: string
     defaultProtein?: string
+    mealId?: number
     onSuccess?: () => void
 }
 
-export function MealLogForm({ defaultName = '', defaultProtein = '', onSuccess }: MealLogFormProps) {
+export function MealLogForm({
+    defaultName = '',
+    defaultProtein = '',
+    mealId,
+    onSuccess,
+}: MealLogFormProps) {
     const router = useRouter()
     const today = new Date().toISOString().split('T')[0]
 
@@ -32,6 +38,9 @@ export function MealLogForm({ defaultName = '', defaultProtein = '', onSuccess }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-3">
+            {mealId !== undefined && (
+                <input type="hidden" name="mealId" value={mealId} />
+            )}
             <input 
                 name="name" 
                 placeholder="Meal name" 

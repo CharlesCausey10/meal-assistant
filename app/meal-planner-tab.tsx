@@ -9,7 +9,7 @@ export async function MealPlannerTab({
 }) {
     await searchParams
 
-    const [meals, groceryLists] = await Promise.all([
+    const [meals, groceryLists, cookedLogs] = await Promise.all([
         prisma.meal.findMany({
             include: {
                 ingredients: {
@@ -33,10 +33,28 @@ export async function MealPlannerTab({
                 { createdAt: 'desc' },
             ],
         }),
+        prisma.mealLog.findMany({
+            where: {
+                isActive: true,
+                mealId: { not: null },
+            },
+            select: {
+                mealId: true,
+                cookedAt: true,
+            },
+            orderBy: { cookedAt: 'desc' },
+        }),
     ])
 
+    const lastCookedAtByMealId = new Map<number, Date>()
+    for (const log of cookedLogs) {
+        if (log.mealId !== null && !lastCookedAtByMealId.has(log.mealId)) {
+            lastCookedAtByMealId.set(log.mealId, log.cookedAt)
+        }
+    }
+
     // Convert Decimal quantities to numbers for safe serialization to Client Component
-    const serializedMeals = serializeMeals(meals)
+    const serializedMeals = serializeMeals(meals, lastCookedAtByMealId)
 
     return <MealPlannerContent meals={serializedMeals} groceryLists={groceryLists} />
 }

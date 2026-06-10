@@ -16,6 +16,19 @@ interface PageLayoutProps {
 
 const LAST_TAB_STORAGE_KEY = 'meal-planner:last-tab'
 
+const LEGACY_TAB_IDS: Record<string, string> = {
+    meals: 'recipes',
+    logs: 'leftovers',
+}
+
+function normalizeTabId(tabId: string | null): string | null {
+    if (!tabId) {
+        return null
+    }
+
+    return LEGACY_TAB_IDS[tabId] ?? tabId
+}
+
 function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     const router = useRouter()
     const pathname = usePathname()
@@ -33,26 +46,40 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
         }
     }, [])
 
-    const tabFromUrl = searchParams.get('tab')
-    const hasValidTabFromUrl = tabs.some(tab => tab.id === tabFromUrl)
-    const hasValidSavedTab = savedTab !== null && tabs.some(tab => tab.id === savedTab)
+    const tabFromUrl = normalizeTabId(searchParams.get('tab'))
+    const normalizedSavedTab = normalizeTabId(savedTab)
+    const hasValidTabFromUrl = tabFromUrl !== null && tabs.some(tab => tab.id === tabFromUrl)
+    const hasValidSavedTab =
+        normalizedSavedTab !== null && tabs.some(tab => tab.id === normalizedSavedTab)
+    const rawTabFromUrl = searchParams.get('tab')
+    const needsLegacyTabRedirect =
+        rawTabFromUrl !== null && rawTabFromUrl !== tabFromUrl && tabFromUrl !== null
 
     const activeTab = hasValidTabFromUrl
         ? tabFromUrl!
         : hasValidSavedTab
-            ? savedTab!
+            ? normalizedSavedTab!
             : (tabs[0]?.id || '')
 
     useEffect(() => {
-        if (!storageChecked || hasValidTabFromUrl || !activeTab) {
+        if (!storageChecked || !activeTab) {
             return
         }
 
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('tab', activeTab)
-
-        router.replace(`${pathname}?${params.toString()}`)
-    }, [activeTab, hasValidTabFromUrl, pathname, router, searchParams, storageChecked])
+        if (needsLegacyTabRedirect || (!hasValidTabFromUrl && activeTab)) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('tab', activeTab)
+            router.replace(`${pathname}?${params.toString()}`)
+        }
+    }, [
+        activeTab,
+        hasValidTabFromUrl,
+        needsLegacyTabRedirect,
+        pathname,
+        router,
+        searchParams,
+        storageChecked,
+    ])
 
     useEffect(() => {
         if (!storageChecked || !activeTab) {

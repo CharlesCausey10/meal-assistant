@@ -55,6 +55,7 @@ model Meal {
     recipeUrl   String?
     ingredients MealIngredient[]
     groceryUses GroceryListMeal[]
+    mealLogs    MealLog[]
     createdAt   DateTime         @default(now())
 }
 
@@ -85,7 +86,12 @@ model MealLog {
     name      String
     protein   Protein?
     cookedAt  DateTime
+    mealId    Int?
+    meal      Meal?    @relation(fields: [mealId], references: [id], onDelete: SetNull)
+    isActive  Boolean  @default(true)
     createdAt DateTime @default(now())
+
+    @@index([mealId, isActive, cookedAt])
 }
 
 model GroceryList {

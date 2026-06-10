@@ -17,7 +17,7 @@ export function MealLogContent({ mealLogs }: { mealLogs: MealLog[] }) {
                     onClick={() => setIsNewLogOpen(true)}
                     className="w-full bg-linear-to-r from-primary to-primary-hover text-primary-contrast px-4 py-2 rounded-lg font-medium"
                 >
-                    New Log
+                    Log Leftover
                 </button>
             </div>
 

@@ -42,13 +42,13 @@ export default async function Home({
 
     const tabs = [
         {
-            id: 'meals',
-            label: '🍽️ Meals',
+            id: 'recipes',
+            label: '🍽️ Recipes',
             content: <MealPlannerTab searchParams={searchParams} />,
         },
         {
-            id: 'logs',
-            label: '📅 Log',
+            id: 'leftovers',
+            label: '🧊 Leftovers',
             content: <MealLogTab />,
         },
         {

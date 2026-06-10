@@ -58,9 +58,15 @@ export async function deleteMeal(formData: FormData) {
 
     if (!id) return
 
-    await prisma.meal.delete({
-        where: { id: parseInt(id) }
-    })
+    const mealId = parseInt(id)
+
+    await prisma.$transaction([
+        prisma.mealLog.updateMany({
+            where: { mealId, isActive: true },
+            data: { mealId: null },
+        }),
+        prisma.meal.delete({ where: { id: mealId } }),
+    ])
 
     revalidatePath('/')
 }
