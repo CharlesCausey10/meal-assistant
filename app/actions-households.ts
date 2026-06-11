@@ -5,7 +5,7 @@ import { HouseholdRole } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { withAuth } from '@workos-inc/authkit-nextjs'
-import { getAuthenticatedActionContext } from '@/lib/auth'
+import { getAuthenticatedActionContext, upsertUserFromWorkOS } from '@/lib/auth'
 import { copyMealLogsToHousehold, copyMealsAndIngredientsToHousehold } from '@/lib/household-copy'
 import { createInviteToken, ensureHouseholdInviteToken } from '@/lib/household-invites'
 import { prisma } from '@/lib/prisma'
@@ -268,20 +268,7 @@ export async function acceptHouseholdInvite(formData: FormData) {
         throw new Error('This invite link is no longer valid.')
     }
 
-    const user = await prisma.user.upsert({
-        where: { workosUserId: auth.user.id },
-        update: {
-            email: auth.user.email,
-            firstName: auth.user.firstName,
-            lastName: auth.user.lastName,
-        },
-        create: {
-            workosUserId: auth.user.id,
-            email: auth.user.email,
-            firstName: auth.user.firstName,
-            lastName: auth.user.lastName,
-        },
-    })
+    const user = await upsertUserFromWorkOS(auth.user)
     const currentMembership = await prisma.householdMember.findUnique({
         where: { userId: user.id },
         include: { household: true },

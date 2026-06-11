@@ -340,6 +340,12 @@
         are household scoped. This is a reasonable stopping point to publish the code and configure production
         WorkOS credentials, after a final local smoke test and production environment setup.
       </div>
+      <div class="note">
+        <strong>Production WorkOS relink fix:</strong> staging and production WorkOS environments can issue
+        different <code>workosUserId</code> values for the same Google account. Because the local database is
+        shared between local testing and production, <code>lib/auth.ts</code> now relinks an existing local
+        <code>User</code> by email when the WorkOS ID changes instead of failing on the unique email constraint.
+      </div>
     </section>
 
     <section>

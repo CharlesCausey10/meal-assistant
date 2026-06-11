@@ -40,24 +40,50 @@ async function getBootstrapHousehold() {
     })
 }
 
+export async function upsertUserFromWorkOS(workosUser: WorkOSUser) {
+    const userData = {
+        email: workosUser.email,
+        firstName: workosUser.firstName,
+        lastName: workosUser.lastName,
+    }
+    const userByWorkOSId = await prisma.user.findUnique({
+        where: { workosUserId: workosUser.id },
+    })
+
+    if (userByWorkOSId) {
+        return prisma.user.update({
+            where: { id: userByWorkOSId.id },
+            data: userData,
+        })
+    }
+
+    const userByEmail = await prisma.user.findUnique({
+        where: { email: workosUser.email },
+    })
+
+    if (userByEmail) {
+        return prisma.user.update({
+            where: { id: userByEmail.id },
+            data: {
+                ...userData,
+                workosUserId: workosUser.id,
+            },
+        })
+    }
+
+    return prisma.user.create({
+        data: {
+            ...userData,
+            workosUserId: workosUser.id,
+        },
+    })
+}
+
 async function syncUserAndMembership(
     workosUser: WorkOSUser,
     organizationId: string | undefined
 ): Promise<AuthenticatedContext> {
-    const user = await prisma.user.upsert({
-        where: { workosUserId: workosUser.id },
-        update: {
-            email: workosUser.email,
-            firstName: workosUser.firstName,
-            lastName: workosUser.lastName,
-        },
-        create: {
-            workosUserId: workosUser.id,
-            email: workosUser.email,
-            firstName: workosUser.firstName,
-            lastName: workosUser.lastName,
-        },
-    })
+    const user = await upsertUserFromWorkOS(workosUser)
 
     const existingMembership = await prisma.householdMember.findUnique({
         where: { userId: user.id },
@@ -116,20 +142,7 @@ async function syncUserAndMembership(
 }
 
 async function createFirstHouseholdForUser(workosUser: WorkOSUser): Promise<AuthenticatedContext> {
-    const user = await prisma.user.upsert({
-        where: { workosUserId: workosUser.id },
-        update: {
-            email: workosUser.email,
-            firstName: workosUser.firstName,
-            lastName: workosUser.lastName,
-        },
-        create: {
-            workosUserId: workosUser.id,
-            email: workosUser.email,
-            firstName: workosUser.firstName,
-            lastName: workosUser.lastName,
-        },
-    })
+    const user = await upsertUserFromWorkOS(workosUser)
     const householdName = workosUser.firstName
         ? `${workosUser.firstName}'s Household`
         : 'My Household'

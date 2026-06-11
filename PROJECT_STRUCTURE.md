@@ -75,6 +75,7 @@ npm run prisma   # run Prisma CLI
 
 - `getAuthenticatedContext()` is used by server components and route handlers that should require sign-in.
 - `getAuthenticatedActionContext()` is used by server actions; it calls `withAuth()` without `ensureSignedIn` and redirects to sign-in when no user exists.
+- `upsertUserFromWorkOS()` syncs WorkOS users into the local `User` table. If a production WorkOS environment issues a new `workosUserId` for an email that already exists from staging/local testing, the helper relinks the existing local user by email instead of creating a duplicate.
 - The bootstrap path links the first signed-in WorkOS user as `OWNER` of `Personal Household` if no WorkOS organization context exists yet.
 - If WorkOS supplies an organization ID that has no local household, the helper creates a local household shell with that `workosOrganizationId`.
 
