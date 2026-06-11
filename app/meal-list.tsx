@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { deleteMeal, updateMeal } from './actions'
 import { addMealToGroceryList } from './actions-grocery'
 import { PreferenceInput } from './components/preference-input'
@@ -318,12 +319,12 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                         {groceryLists.length === 0 ? (
                             <div className="space-y-2">
                                 <p className="text-sm text-app-subtle">No grocery lists yet.</p>
-                                <a
+                                <Link
                                     href="/?tab=grocery"
                                     className="inline-block text-sm text-primary-text hover:text-primary-text"
                                 >
                                     Go to Grocery tab to create one
-                                </a>
+                                </Link>
                             </div>
                         ) : (
                             <div className="space-y-2">

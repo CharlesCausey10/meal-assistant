@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meal Assistant User, Household, and WorkOS Migration Plan</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f3ec;
+      --surface: #fffaf2;
+      --surface-strong: #ffffff;
+      --text: #2d2922;
+      --muted: #6f675b;
+      --border: #ded2c2;
+      --accent: #3f6f5f;
+      --accent-soft: #dce9e2;
+      --warning: #8a5a22;
+      --code: #f1eadf;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(1040px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 64px;
+    }
+
+    header {
+      margin-bottom: 28px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.15;
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 820px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-top: 36px;
+      font-size: 1.55rem;
+    }
+
+    h3 {
+      margin-top: 24px;
+      font-size: 1.12rem;
+    }
+
+    p {
+      margin: 12px 0;
+    }
+
+    a {
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.4rem;
+    }
+
+    li {
+      margin: 8px 0;
+    }
+
+    code {
+      border-radius: 5px;
+      background: var(--code);
+      padding: 0.12rem 0.32rem;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-strong);
+      padding: 16px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+
+    .summary {
+      max-width: 820px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 1.08rem;
+    }
+
+    .note {
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--accent);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 14px 16px;
+      margin: 18px 0;
+    }
+
+    .warning {
+      border-left-color: var(--warning);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 16px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 4px 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      background: var(--surface);
+    }
+
+    th,
+    td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--accent-soft);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="pill">Implementation Plan</span>
+      <h1>Meal Assistant User, Household, and WorkOS Migration Plan</h1>
+      <p class="summary">
+        This document captures the agreed direction for adding users, households, WorkOS authentication,
+        household-shared meals/logs/grocery lists, copied starter ingredients, empty starting meal libraries, and
+        user-specific meal preferences. It is intended to give future agents enough context to implement
+        the migration without needing the original conversation.
+      </p>
+    </header>
+
+    <section>
+      <h2>Current App Context</h2>
+      <p>
+        Meal Assistant is currently a personal Next.js App Router application backed by Prisma and PostgreSQL.
+        The current data model has no user or household concept. Existing rows represent the owner/developer's
+        personal dev data.
+      </p>
+      <p>
+        Before making implementation changes, read <code>PROJECT_STRUCTURE.md</code>. It describes the app
+        structure, major files, Prisma models, server actions, and query locations.
+      </p>
+      <div class="note warning">
+        <strong>Important:</strong> The existing database contains personal dev data. If a future agent creates
+        test households, users, logs, meals, grocery lists, or ingredients while testing locally, those records
+        must be cleaned up afterward.
+      </div>
+    </section>
+
+    <section>
+      <h2>Decisions Already Made</h2>
+      <ul>
+        <li>Use WorkOS AuthKit for authentication.</li>
+        <li>Use WorkOS Organizations as the auth-side representation of households.</li>
+        <li>Keep local app tables as the source of truth for meal, ingredient, log, and grocery data.</li>
+        <li>Do not add a <code>scope</code> column to <code>Ingredient</code> or <code>Meal</code>.</li>
+        <li>Use <code>Ingredient.householdId = null</code> to mean a global default ingredient row.</li>
+        <li>Do not maintain global/default starter meals for onboarding. New households start with no meals and add meals manually or copy opted-in templates from Discover.</li>
+        <li>Use <code>householdId != null</code> to mean a row owned by one household.</li>
+        <li>When a household is created, copy all global ingredients into that household.</li>
+        <li>Copied meals do not need <code>sourceMealId</code>.</li>
+        <li>Do not add household ingredient preferences.</li>
+        <li>Meal preferences are user-specific 1-10 integer scores.</li>
+        <li>Household members share meals, logs, leftovers, grocery lists, and ingredients.</li>
+        <li>The only household-member-specific food signal is meal preference, used for dashboard suggestions.</li>
+        <li>Discover sharing is a household-level tri-state: <code>null</code> means undecided, <code>true</code> means opted in, and <code>false</code> means private.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Execution Notes</h2>
+      <div class="note">
+        <strong>Phase 1 adjustment:</strong> the first implementation pass adds the new identity and
+        household schema while keeping <code>Meal.preference</code> temporarily. That allows the app to
+        continue running before a real WorkOS user exists. After WorkOS is configured and the initial
+        owner user is known, migrate existing <code>Meal.preference</code> values into
+        <code>MealPreference</code> for that user, then remove <code>Meal.preference</code>.
+      </div>
+      <div class="note warning">
+        <strong>User action checkpoint:</strong> before the WorkOS integration can be finished, the owner
+        needs to create or choose a WorkOS account/application and provide local environment values for
+        <code>WORKOS_API_KEY</code>, <code>WORKOS_CLIENT_ID</code>, <code>WORKOS_COOKIE_PASSWORD</code>,
+        and <code>NEXT_PUBLIC_WORKOS_REDIRECT_URI</code>. Do not invent placeholder secrets.
+      </div>
+      <div class="note warning">
+        <strong>Verification preference:</strong> do not personally open or verify the local dev server.
+        When localhost verification is needed, ask the owner to run/check the app instead.
+      </div>
+      <div class="note warning">
+        <strong>Production preflight finding:</strong> the current database is also the production database.
+        A read-only preflight on June 10, 2026 found 63 meals, 232 ingredients, 0 meal logs, and 3 grocery
+        lists. Ingredient names had no case-insensitive duplicates. Meal names had these case-insensitive
+        duplicates: <code>almond butter toast</code>, <code>bbq chicken</code>, <code>cereal</code>,
+        <code>nutella toast</code>, <code>turkey sandwich</code>, and <code>yogurt</code>. Because of this,
+        Phase 1 intentionally does not add meal-name unique indexes. Meal-name uniqueness remains the target
+        invariant after the future tag/multi-category cleanup.
+      </div>
+      <div class="note">
+        <strong>Phase 1 applied:</strong> on June 10, 2026, migration
+        <code>20260610120000_add_users_households_phase1</code> was applied to the production-backed Neon
+        PostgreSQL database. A post-migration read-only check found 1 household, 0 users, 0 household
+        members, 63 household-linked meals, 232 household-linked ingredients, 3 household-linked grocery
+        lists, 0 household-linked meal logs, and 0 meal preferences. The existing data is now attached to
+        <code>Personal Household</code>; WorkOS users/memberships have not been created yet.
+      </div>
+      <div class="note">
+        <strong>Auth integration started:</strong> WorkOS AuthKit Next.js package <code>@workos-inc/authkit-nextjs</code>
+        was installed and the app now has <code>proxy.ts</code>, <code>app/login/route.ts</code>,
+        <code>app/callback/route.ts</code>, <code>app/logout/route.ts</code>, and <code>lib/auth.ts</code>.
+        The root page requires sign-in and server-rendered app data is scoped to the authenticated household.
+        For bootstrapping, the first signed-in WorkOS user is linked as <code>OWNER</code> of
+        <code>Personal Household</code> when no WorkOS organization context exists.
+      </div>
+      <div class="note">
+        <strong>Auth runtime fix:</strong> do not call <code>getSignInUrl()</code> or
+        <code>withAuth({ ensureSignedIn: true })</code> from server components/actions in this app, because
+        the WorkOS PKCE cookie must be set from a route handler or proxy context. Server components/actions
+        should redirect to local <code>/login</code>; <code>app/login/route.ts</code> then calls
+        <code>getSignInUrl()</code>. <code>proxy.ts</code> enables <code>middlewareAuth</code> and leaves
+        <code>/login</code> and <code>/callback</code> unauthenticated.
+      </div>
+      <div class="note">
+        <strong>Meal preference migration applied:</strong> on June 10, 2026, migration
+        <code>20260610133000_migrate_meal_preferences_to_users</code> moved the 63 existing meal scores
+        from <code>Meal.preference</code> into <code>MealPreference</code> for the owner of
+        <code>Personal Household</code>, then dropped <code>Meal.preference</code>. A post-migration
+        read-only check found 63 <code>MealPreference</code> rows, all with valid 1-10 scores, and confirmed
+        the old <code>Meal.preference</code> column no longer exists.
+      </div>
+      <div class="note">
+        <strong>Meal query runtime fix:</strong> after the preference migration, Prisma errored on the Meals
+        tab when relation-loading <code>preferences</code> with both <code>where: { userId }</code> and
+        <code>take: 1</code>. Because <code>MealPreference</code> is unique by
+        <code>(userId, mealId)</code>, <code>take: 1</code> is unnecessary. It was removed from meal,
+        dashboard, and grocery meal queries.
+      </div>
+      <div class="note">
+        <strong>Navigation performance and sign-out fix:</strong> the root page now renders only the active
+        tab's server component instead of constructing every tab on each request. <code>PageLayout</code>
+        now forwards <code>userEmail</code> and <code>householdName</code> correctly, which restores the
+        account strip and <code>Sign out</code> link. Auth context lookup also avoids repeated user/membership
+        upserts when the local records already exist.
+      </div>
+      <div class="note">
+        <strong>Household management status:</strong> <code>app/households/page.tsx</code> and
+        <code>app/actions-households.ts</code> now enforce one local household membership per user.
+        The page is singular, with owner-driven actions to link <code>Personal Household</code> to a
+        WorkOS Organization, manage invite links, remove members, and let non-owner members leave into a
+        new personal household with copied meals and ingredients. Owners do not see this copy flow because
+        they already control their household.
+      </div>
+      <div class="note">
+        <strong>Invite and auto-household migration:</strong> households now have one active app-level invite
+        token. Owners can create the first invite link, copy an existing link, refresh the token, and see a
+        snackbar confirmation when a link is copied or refreshed-and-copied. Invite acceptance moves the
+        accepting user out of their current household, deletes their old household only when it becomes empty,
+        creates a WorkOS organization membership and local <code>HouseholdMember</code>, then refreshes the
+        session into that household. Uninvited first-time users who sign in directly are automatically given
+        their own WorkOS-backed household.
+      </div>
+      <div class="note">
+        <strong>One-household rule:</strong> <code>HouseholdMember.userId</code> is unique. A user can be in
+        exactly one household at a time. WorkOS Organizations still exist behind the scenes, but the product
+        model is "your household", not a multi-household workspace switcher.
+      </div>
+      <div class="note">
+        <strong>Starter meal picker removed:</strong> new households now start with no meals. They can create
+        meals manually or copy opted-in meal templates from Discover. Global/default rows are still useful for
+        ingredients, but not for meals.
+      </div>
+      <div class="note">
+        <strong>Discover consent status:</strong> households now have a nullable
+        <code>discoverableMealsOptIn</code> setting. Owners can choose <strong>Allow Discover</strong> or
+        <strong>Keep private</strong> from the Household page. The Discover tab now lists meal templates from
+        other opted-in households and lets the current household copy selected meals.
+      </div>
+      <div class="note">
+        <strong>Production readiness checkpoint:</strong> as of June 11, 2026, the core user/household
+        migration is functionally complete locally: WorkOS sign-in works, one-household membership is enforced,
+        invite/member management works, member leave/copy works, Discover opt-in/copy works, and all main tabs
+        are household scoped. This is a reasonable stopping point to publish the code and configure production
+        WorkOS credentials, after a final local smoke test and production environment setup.
+      </div>
+    </section>
+
+    <section>
+      <h2>Target Data Model</h2>
+      <p>
+        The app has introduced local <code>User</code>, <code>Household</code>, <code>HouseholdMember</code>,
+        and <code>MealPreference</code> models. Existing operational models are household-scoped.
+      </p>
+
+      <h3>New Models</h3>
+      <pre><code>enum HouseholdRole {
+  OWNER
+  MEMBER
+}
+
+model User {
+  id            Int                @id @default(autoincrement())
+  workosUserId  String             @unique
+  email         String             @unique
+  firstName     String?
+  lastName      String?
+  memberships   HouseholdMember[]
+  preferences   MealPreference[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model Household {
+  id                   Int                @id @default(autoincrement())
+  workosOrganizationId  String?            @unique
+  discoverableMealsOptIn Boolean?
+  name                 String
+  members              HouseholdMember[]
+  meals                Meal[]
+  ingredients          Ingredient[]
+  mealLogs             MealLog[]
+  groceryLists         GroceryList[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model HouseholdMember {
+  id           Int           @id @default(autoincrement())
+  householdId  Int
+  userId       Int
+  role         HouseholdRole @default(MEMBER)
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([householdId, userId])
+}
+
+model MealPreference {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  mealId    Int
+  score     Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, mealId])
+}</code></pre>
+
+      <h3>Existing Model Changes</h3>
+      <pre><code>model Ingredient {
+  id           Int                 @id @default(autoincrement())
+  householdId  Int?
+  household    Household?          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name         String
+  category     IngredientCategory
+  mealUses     MealIngredient[]
+  groceryListItems GroceryListItem[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+model Meal {
+  id           Int              @id @default(autoincrement())
+  householdId  Int?
+  household    Household?       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name         String
+  protein      Protein?
+  category     Category
+  notes        String?
+  recipeUrl    String?
+  ingredients  MealIngredient[]
+  groceryUses  GroceryListMeal[]
+  mealLogs     MealLog[]
+  preferences  MealPreference[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model MealLog {
+  id           Int        @id @default(autoincrement())
+  householdId  Int
+  household    Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name         String
+  protein      Protein?
+  cookedAt     DateTime
+  mealId       Int?
+  meal         Meal?      @relation(fields: [mealId], references: [id], onDelete: SetNull)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  @@index([householdId, isActive, cookedAt])
+  @@index([mealId, isActive, cookedAt])
+}
+
+model GroceryList {
+  id           Int               @id @default(autoincrement())
+  householdId  Int
+  household    Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name         String
+  notes        String?
+  items        GroceryListItem[]
+  sourceMeals  GroceryListMeal[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}</code></pre>
+
+      <div class="note">
+        <code>Meal.preference</code> has been removed. Existing scores were migrated into
+        <code>MealPreference</code> for the initial owner user.
+      </div>
+    </section>
+
+    <section>
+      <h2>Database Constraints</h2>
+      <p>
+        Because uniqueness with nullable columns can be awkward in PostgreSQL and Prisma, use raw SQL partial
+        unique indexes for global versus household-owned names.
+      </p>
+      <pre><code>CREATE UNIQUE INDEX ingredient_global_name_unique
+ON "Ingredient"(lower("name"))
+WHERE "householdId" IS NULL;
+
+CREATE UNIQUE INDEX ingredient_household_name_unique
+ON "Ingredient"("householdId", lower("name"))
+WHERE "householdId" IS NOT NULL;
+
+CREATE UNIQUE INDEX meal_global_name_unique
+ON "Meal"(lower("name"))
+WHERE "householdId" IS NULL;
+
+CREATE UNIQUE INDEX meal_household_name_unique
+ON "Meal"("householdId", lower("name"))
+WHERE "householdId" IS NOT NULL;
+
+ALTER TABLE "MealPreference"
+ADD CONSTRAINT meal_preference_score_check CHECK ("score" BETWEEN 1 AND 10);</code></pre>
+      <div class="note">
+        <strong>Phase 1 constraint decision:</strong> ingredient uniqueness remains enforced with partial
+        global/household indexes. Meal-name uniqueness is postponed because existing duplicate meal names
+        represent meals that can be used in multiple meal windows.
+      </div>
+    </section>
+
+    <section>
+      <h2>WorkOS Setup Plan</h2>
+      <p>
+        Use the official WorkOS Next.js AuthKit flow. WorkOS currently recommends <code>proxy.ts</code> for
+        Next.js 16, noting that this file was called middleware before Next 16.
+      </p>
+      <ol>
+        <li>Create/configure the WorkOS application in the dashboard.</li>
+        <li>Install the Next.js SDK: <code>npm install @workos-inc/authkit-nextjs</code> (already done).</li>
+        <li>Add environment variables: <code>WORKOS_API_KEY</code>, <code>WORKOS_CLIENT_ID</code>, <code>WORKOS_COOKIE_PASSWORD</code>, and <code>NEXT_PUBLIC_WORKOS_REDIRECT_URI</code>.</li>
+        <li>Set <code>NEXT_PUBLIC_WORKOS_REDIRECT_URI=http://localhost:3000/callback</code> locally.</li>
+        <li>In the WorkOS Dashboard, configure the redirect URI as <code>http://localhost:3000/callback</code>.</li>
+        <li>Configure the WorkOS sign-in endpoint to point at the app's login endpoint.</li>
+        <li>Wrap <code>app/layout.tsx</code> children in <code>AuthKitProvider</code> (already done).</li>
+        <li>Add <code>proxy.ts</code> using <code>authkitProxy</code> for Next.js 16 (already done).</li>
+        <li>Add <code>app/callback/route.ts</code> using <code>handleAuth()</code> (already done).</li>
+        <li>Add <code>app/login/route.ts</code> using <code>getSignInUrl()</code> (already done).</li>
+        <li>Add a sign-out route using <code>signOut()</code> (already done).</li>
+        <li>In server components/actions, redirect to local <code>/login</code> when unauthenticated rather than calling <code>getSignInUrl()</code> directly.</li>
+      </ol>
+
+      <h3>Useful WorkOS References</h3>
+      <ul>
+        <li><a href="https://workos.com/docs/authkit/nextjs">WorkOS AuthKit Next.js guide</a></li>
+        <li><a href="https://workos.com/docs/authkit/users-organizations">WorkOS Users and Organizations</a></li>
+        <li><a href="https://workos.com/docs/authkit/invitations">WorkOS Invitations</a></li>
+      </ul>
+
+      <h3>Owner Setup Checklist</h3>
+      <ol>
+        <li>Sign in to or create a WorkOS account at <a href="https://dashboard.workos.com">dashboard.workos.com</a>.</li>
+        <li>Use the staging environment first; switch to a production WorkOS environment before inviting real users.</li>
+        <li>Find the app's <code>API Key</code> and <code>Client ID</code>.</li>
+        <li>In the dashboard Redirects section, set the redirect URI to <code>http://localhost:3000/callback</code>.</li>
+        <li>In the same Redirects section, set the sign-in endpoint to <code>http://localhost:3000/login</code>.</li>
+        <li>Set a sign-out redirect, usually <code>http://localhost:3000</code>.</li>
+        <li>Generate a cookie password of at least 32 characters, such as with <code>openssl rand -base64 32</code>.</li>
+        <li>Add the values to local environment variables: <code>WORKOS_API_KEY</code>, <code>WORKOS_CLIENT_ID</code>, <code>WORKOS_COOKIE_PASSWORD</code>, and <code>NEXT_PUBLIC_WORKOS_REDIRECT_URI</code>.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Production Publish Checklist</h2>
+      <ol>
+        <li>Choose the production domain, for example <code>https://meal-assistant.example.com</code>.</li>
+        <li>In the production WorkOS environment, configure redirect URI <code>https://YOUR_DOMAIN/callback</code>.</li>
+        <li>Configure sign-in endpoint <code>https://YOUR_DOMAIN/login</code>.</li>
+        <li>Configure sign-out redirect <code>https://YOUR_DOMAIN</code>.</li>
+        <li>Set production environment variables on the hosting platform: <code>DATABASE_URL</code>, <code>WORKOS_API_KEY</code>, <code>WORKOS_CLIENT_ID</code>, <code>WORKOS_COOKIE_PASSWORD</code>, and <code>NEXT_PUBLIC_WORKOS_REDIRECT_URI=https://YOUR_DOMAIN/callback</code>.</li>
+        <li>Use a new production-only <code>WORKOS_COOKIE_PASSWORD</code> with at least 32 characters.</li>
+        <li>Run the normal production build/deploy command, which should run <code>prisma generate</code>, <code>prisma migrate deploy</code>, and the Next.js build.</li>
+        <li>After deployment, sign in with the intended owner account first and confirm the existing production household/data is visible.</li>
+        <li>Create a fresh production invite link, test it with one non-owner account, then remove the test member or leave/copy as needed.</li>
+      </ol>
+      <div class="note warning">
+        <strong>Important:</strong> the local database URL currently points at the production Neon database.
+        Avoid destructive test data changes, and clean up any test meals, households, invites, or users created
+        during smoke testing.
+      </div>
+    </section>
+
+    <section>
+      <h2>Local Auth Mapping</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>WorkOS Concept</th>
+            <th>Local Concept</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>WorkOS User</td>
+            <td><code>User</code></td>
+            <td>Store <code>workosUserId</code>, email, optional names. WorkOS remains auth source of truth.</td>
+          </tr>
+          <tr>
+            <td>WorkOS Organization</td>
+            <td><code>Household</code></td>
+            <td>Store <code>workosOrganizationId</code>. Household owns app data.</td>
+          </tr>
+          <tr>
+            <td>WorkOS Organization Membership</td>
+            <td><code>HouseholdMember</code></td>
+            <td>Mirror enough locally to query access and role quickly.</td>
+          </tr>
+          <tr>
+            <td>App invite link</td>
+            <td>Household invite</td>
+            <td>Use an app-level token link, create the WorkOS organization membership after acceptance, then refresh the session.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Household Creation Flow</h2>
+      <ol>
+        <li>User signs in through WorkOS AuthKit.</li>
+        <li>App calls <code>withAuth({ ensureSignedIn: true })</code>.</li>
+        <li>App upserts local <code>User</code> from the WorkOS session user.</li>
+        <li>App checks whether the user already has one local household membership.</li>
+        <li>If none exists and the user signed in directly, app automatically creates a personal WorkOS Organization and local household.</li>
+        <li>If the user joins an invite, app moves them into the invited household and out of any previous household.</li>
+        <li>When creating a personal household, create the WorkOS Organization.</li>
+        <li>Create the WorkOS organization membership for the current user.</li>
+        <li>Create local <code>Household</code> with <code>workosOrganizationId</code>.</li>
+        <li>Create local <code>HouseholdMember</code> with role <code>OWNER</code>.</li>
+        <li>Copy all global ingredients where <code>householdId IS NULL</code> into the new household.</li>
+        <li>Start the household with an empty meal library; the user can add meals manually or use Discover.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>New Household Meal Startup</h2>
+      <ol>
+        <li>Copy global default ingredients where <code>Ingredient.householdId IS NULL</code>.</li>
+        <li>Do not copy or present global/default meals during onboarding.</li>
+        <li>Show an empty meal library until the household creates meals manually or copies opted-in templates from Discover.</li>
+      </ol>
+      <div class="note">
+        This keeps the app from imposing a default taste profile. Ingredients are a useful catalog bootstrap;
+        meals are personal enough that they should come from the household or from explicit Discover copies.
+      </div>
+      <div class="note">
+        Do not keep a <code>sourceMealId</code>. Once a meal is copied from Discover, the household meal is its
+        own editable row.
+      </div>
+    </section>
+
+    <section>
+      <h2>Invite Flow</h2>
+      <ol>
+        <li>Household owner clicks <strong>Create link</strong> when no invite link exists.</li>
+        <li>The app creates the household invite token, immediately copies the invite URL to the clipboard, and shows a snackbar confirmation.</li>
+        <li>Household owner can send the copied URL by text, email, or any other channel.</li>
+        <li>Once a link exists, the UI shows separate <strong>Refresh</strong> and <strong>Copy</strong> buttons.</li>
+        <li>Clicking <strong>Copy</strong> copies the current invite URL and shows a snackbar confirmation.</li>
+        <li>Clicking <strong>Refresh</strong> rotates the token, immediately copies the new URL, and shows a snackbar confirmation.</li>
+        <li>Invitee opens the app-level invite URL, then signs up or signs in through WorkOS if needed.</li>
+        <li>Invitee accepts the invite in the app.</li>
+        <li>If the invitee owns a household with other members, app blocks the join until those members are removed.</li>
+        <li>If the invitee's old household becomes empty, app deletes that old local household and WorkOS Organization.</li>
+        <li>App creates the WorkOS organization membership, upserts local <code>User</code>, creates local <code>HouseholdMember</code>, and refreshes the session into that household.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Leave Household Flow</h2>
+      <ol>
+        <li>Only non-owner members see <strong>Leave household</strong> on the Household page.</li>
+        <li>Clicking <strong>Leave household</strong> opens a confirmation modal.</li>
+        <li>The modal has a pre-checked option to copy meals, ingredients, and the user's meal preference scores.</li>
+        <li>The modal has a second pre-checked option to copy the meal log so dashboard recommendations can continue from cooked history.</li>
+        <li>The meal-log checkbox is only checkable when the meals/ingredients/preferences checkbox is checked.</li>
+        <li>App creates a new WorkOS Organization and personal local household for that user using an internal default name.</li>
+        <li>If selected, app copies the current household's ingredients, meals, and user preference scores into the new household.</li>
+        <li>If selected, app copies meal-log rows into the new household and rewires meal-linked logs to the copied meals.</li>
+        <li>The copy implementation should bulk-insert ingredients, meal ingredients, preferences, and logs so it does not exceed Prisma's interactive transaction timeout.</li>
+        <li>If copying fails before the membership move, app deletes the newly created local household and WorkOS Organization.</li>
+        <li>App removes the user from the old household.</li>
+        <li>Owners cannot use this flow because they already control their household and can edit meals and ingredients directly.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Discover Privacy Plan</h2>
+      <ol>
+        <li>Discover is opt-in per household, controlled by <code>Household.discoverableMealsOptIn</code>.</li>
+        <li><code>null</code> means the household owner has not decided yet.</li>
+        <li><code>true</code> means household meal templates may appear in Discover.</li>
+        <li><code>false</code> means household meals remain private and excluded from Discover.</li>
+        <li>Discover must not expose meal logs, grocery lists, household names, member names, or per-user preference scores.</li>
+        <li>Discover suggestions should track seen meal IDs in browser <code>localStorage</code>, per user/device/browser.</li>
+        <li>Seen meal IDs should expire after 30 days, so meals can eventually reappear.</li>
+        <li>Do not create database records for passive impressions, swipes, or dismissals.</li>
+        <li>Persist only meaningful actions such as copying/saving a discovered meal into a household.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Discover Implementation Status</h2>
+      <ul>
+        <li><code>app/discover-tab.tsx</code> fetches up to 100 meal templates from other households where <code>discoverableMealsOptIn = true</code>.</li>
+        <li>The Discover query excludes meals whose names already exist in the current household.</li>
+        <li>The Discover empty state distinguishes no opted-in meals, all shared meals already existing by name in the current household, and all current suggestions being hidden in this browser.</li>
+        <li><code>app/discover-content.tsx</code> stores hidden/copied suggestion IDs in browser <code>localStorage</code> with a 30-day expiration, keyed by local user ID.</li>
+        <li><code>app/actions-discover.ts</code> validates the source household is still opted in before copying a meal.</li>
+        <li>Copying a discovered meal copies only that meal and the ingredients used by that meal; it does not copy the source household's full ingredient catalog, logs, grocery lists, household name, member names, or preferences.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Query and Mutation Rules</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Meals</h3>
+          <p>Normal app views should query only <code>Meal</code> rows for the current household.</p>
+          <p>Starter selection should query only global meals where <code>householdId IS NULL</code>.</p>
+        </div>
+        <div class="card">
+          <h3>Ingredients</h3>
+          <p>Normal ingredient autocomplete and CRUD should use the current household's copied ingredients.</p>
+          <p>Global ingredients are seed/template data, not normal editable app data.</p>
+        </div>
+        <div class="card">
+          <h3>Meal Logs</h3>
+          <p>Meal logs and active leftovers must include <code>householdId</code> and query only the current household.</p>
+        </div>
+        <div class="card">
+          <h3>Grocery Lists</h3>
+          <p>Grocery lists and grocery items are household-owned. All list queries and actions must enforce current household access.</p>
+        </div>
+        <div class="card">
+          <h3>Dashboard</h3>
+          <p>Dashboard suggestions should use household meals/logs plus the current user's <code>MealPreference</code> scores.</p>
+        </div>
+        <div class="card">
+          <h3>Server Actions</h3>
+          <p>Every mutation should derive <code>userId</code> and <code>householdId</code> from the signed-in WorkOS session, never from hidden form fields alone.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Migration Sequence</h2>
+      <ol>
+        <li>Add <code>User</code>, <code>Household</code>, <code>HouseholdMember</code>, <code>HouseholdRole</code>, and <code>MealPreference</code>.</li>
+        <li>Add nullable <code>householdId</code> to <code>Ingredient</code>, <code>Meal</code>, <code>MealLog</code>, and <code>GroceryList</code>.</li>
+        <li>Create an initial local household named <code>Personal Household</code> for existing personal dev data.</li>
+        <li>Assign all existing personal meals, ingredients, logs, and grocery lists to that initial household.</li>
+        <li>Keep <code>Meal.preference</code> temporarily until the initial WorkOS-backed owner user exists.</li>
+        <li>After WorkOS is configured, create/upsert the initial owner user and household membership.</li>
+        <li>Migrate existing <code>Meal.preference</code> values into <code>MealPreference</code> for the initial owner user.</li>
+        <li>Remove <code>Meal.preference</code> from Prisma schema and app code.</li>
+        <li>Create or maintain seed data for global ingredients with <code>householdId = null</code>. Do not seed global starter meals for onboarding.</li>
+        <li>Add SQL partial unique indexes for global and household names.</li>
+        <li>Update server queries to require current household context.</li>
+        <li>Update server actions to enforce current household access.</li>
+        <li>Update ingredient autocomplete/API routes for household-owned ingredients.</li>
+        <li>Update dashboard ranking to use <code>MealPreference</code> for the current user.</li>
+        <li>Add WorkOS AuthKit integration.</li>
+        <li>Add household creation and starter ingredient copy.</li>
+        <li>Remove starter meal selection and rely on manual meal creation plus Discover copies.</li>
+        <li>Add invite/member management.</li>
+        <li>Test locally at <code>localhost:3000</code>, then clean up test data.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Implementation Hotspots</h2>
+      <ul>
+        <li><code>prisma/schema.prisma</code>: source of truth for models and relations.</li>
+        <li><code>prisma/migrations/</code>: add migrations and raw SQL indexes/check constraints.</li>
+        <li><code>lib/prisma.ts</code>: Prisma client setup, likely unchanged.</li>
+        <li><code>app/layout.tsx</code>: add WorkOS <code>AuthKitProvider</code>.</li>
+        <li><code>proxy.ts</code>: add WorkOS AuthKit proxy for Next.js 16.</li>
+        <li><code>app/callback/route.ts</code>: WorkOS callback route.</li>
+        <li><code>app/login/route.ts</code>: WorkOS login route.</li>
+        <li><code>app/page.tsx</code>: protect and route based on household onboarding state.</li>
+        <li><code>app/dashboard-tab.tsx</code>: household-scoped logs/meals and user-specific preferences.</li>
+        <li><code>app/meal-planner-tab.tsx</code>: household-scoped meal query.</li>
+        <li><code>app/grocery-tab.tsx</code>: household-scoped grocery query.</li>
+        <li><code>app/ingredient-edit-tab.tsx</code>: household-scoped ingredient editor.</li>
+        <li><code>app/api/ingredients/route.ts</code>: household-scoped ingredient autocomplete and creation.</li>
+        <li><code>app/actions*.ts</code>: enforce signed-in user and household access in every mutation.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Testing Checklist</h2>
+      <ul>
+        <li>Sign up/sign in through WorkOS locally.</li>
+        <li>Create a new household.</li>
+        <li>Confirm global ingredients are copied to the household.</li>
+        <li>Confirm a new household starts with copied ingredients but no default meals.</li>
+        <li>Create/edit/delete a household meal.</li>
+        <li>Add/update 1-10 meal preferences for one user.</li>
+        <li>Confirm another household member can see shared meals/logs/grocery lists.</li>
+        <li>Confirm another household member can have different meal preferences.</li>
+        <li>Confirm dashboard suggestions differ by user preference while using the same household meal/log data.</li>
+        <li>Create a grocery list from copied household meals.</li>
+        <li>Invite another user through the app-level household invite link.</li>
+        <li>Click <strong>Create link</strong>, confirm the invite link is created, copied, and confirmed by snackbar, then open it in a signed-out browser/profile, sign in, and accept the invite.</li>
+        <li>Click <strong>Copy</strong> on an existing link and confirm the snackbar appears.</li>
+        <li>Click <strong>Refresh</strong>, confirm the new link is copied with a snackbar, and confirm the previous copied link no longer works.</li>
+        <li>Remove an invited test member from a household and confirm they get their own personal household with copied meals and ingredients.</li>
+        <li>As a non-owner member, click <strong>Leave household</strong> and confirm the modal opens with both copy options pre-checked.</li>
+        <li>Confirm the meal-log checkbox becomes unchecked and disabled when the meals/ingredients/preferences checkbox is unchecked.</li>
+        <li>Leave with both options checked and confirm the user moves into a new household with copied meals, ingredients, personal meal preferences, and meal logs.</li>
+        <li>As an owner, confirm the <strong>Leave household</strong> section is not shown.</li>
+        <li>Confirm a user cannot have more than one local <code>HouseholdMember</code> row.</li>
+        <li>Confirm cross-household access is blocked for all server actions and routes.</li>
+        <li>Opt one household into Discover, create a uniquely named test meal, confirm another household can see and copy it, then remove the test meal if it was only for verification.</li>
+        <li>Clean up any test users, households, and generated records from the personal dev database.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Next Steps</h2>
+      <ul>
+        <li>
+          Add a future meal tagging or multi-category system so one meal can be marked for more than one
+          use case, such as both lunch and dinner. The current production duplicate meal names mostly exist
+          because a meal could only have one <code>Category</code>, so duplicates were used to represent
+          the same meal in multiple meal windows.
+        </li>
+        <li>
+          After that system exists, merge or rename duplicate household meals and then enforce unique meal
+          names within each household. Until then, keep meal-name uniqueness as a planned invariant, but do
+          not block the auth/household migration on implementing tags.
+        </li>
+        <li>
+          Improve Discover ranking after more real households exist. The first implementation uses recent meal
+          updates plus a browser-local 30-day seen cache; future ranking could consider category variety, copied
+          count, or explicit saves without exposing household activity.
+        </li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

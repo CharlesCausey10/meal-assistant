@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { getAuthenticatedActionContext } from '@/lib/auth'
 import { Protein } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
@@ -15,6 +16,7 @@ function parseOptionalMealId(formData: FormData): number | null {
 }
 
 export async function logMeal(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const name = formData.get('name') as string
     const proteinValue = formData.get('protein') as string
     const cookedAtValue = formData.get('cookedAt') as string
@@ -25,12 +27,16 @@ export async function logMeal(formData: FormData) {
     const cookedAt = new Date(cookedAtValue)
 
     if (mealId !== null) {
-        const meal = await prisma.meal.findUnique({ where: { id: mealId }, select: { id: true } })
+        const meal = await prisma.meal.findFirst({
+            where: { id: mealId, householdId: household.id },
+            select: { id: true },
+        })
         if (!meal) mealId = null
     }
 
     await prisma.mealLog.create({
         data: {
+            householdId: household.id,
             name,
             protein: proteinValue ? (proteinValue as Protein) : null,
             cookedAt,
@@ -43,12 +49,13 @@ export async function logMeal(formData: FormData) {
 }
 
 export async function deleteMealLog(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const id = formData.get('id') as string
 
     if (!id) return
 
-    await prisma.mealLog.update({
-        where: { id: parseInt(id) },
+    await prisma.mealLog.updateMany({
+        where: { id: parseInt(id), householdId: household.id },
         data: { isActive: false },
     })
 

@@ -45,27 +45,79 @@ enum IngredientCategory {
     OTHER
 }
 
+enum HouseholdRole {
+    OWNER
+    MEMBER
+}
+
+model User {
+    id           Int               @id @default(autoincrement())
+    workosUserId String            @unique
+    email        String            @unique
+    firstName    String?
+    lastName     String?
+    memberships  HouseholdMember[]
+    preferences  MealPreference[]
+    createdAt    DateTime          @default(now())
+    updatedAt    DateTime          @updatedAt
+}
+
+model Household {
+    id                   Int               @id @default(autoincrement())
+    workosOrganizationId String?           @unique
+    inviteToken          String?           @unique
+    inviteTokenCreatedAt DateTime?
+    discoverableMealsOptIn Boolean?
+    name                 String
+    members              HouseholdMember[]
+    meals                Meal[]
+    ingredients          Ingredient[]
+    mealLogs             MealLog[]
+    groceryLists         GroceryList[]
+    createdAt            DateTime          @default(now())
+    updatedAt            DateTime          @updatedAt
+}
+
+model HouseholdMember {
+    id          Int           @id @default(autoincrement())
+    householdId Int
+    userId      Int           @unique
+    role        HouseholdRole @default(MEMBER)
+    household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+    user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+
+    @@unique([householdId, userId])
+}
+
 model Meal {
     id          Int              @id @default(autoincrement())
+    householdId Int?
+    household   Household?       @relation(fields: [householdId], references: [id], onDelete: Cascade)
     name        String
     protein     Protein?
     category    Category
-    preference  Int?
     notes       String?
     recipeUrl   String?
     ingredients MealIngredient[]
     groceryUses GroceryListMeal[]
     mealLogs    MealLog[]
+    preferences MealPreference[]
     createdAt   DateTime         @default(now())
+    updatedAt   DateTime         @updatedAt
 }
 
 model Ingredient {
     id        Int                @id @default(autoincrement())
-    name      String             @unique
+    householdId Int?
+    household   Household?       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+    name      String
     category  IngredientCategory
     mealUses  MealIngredient[]
     groceryListItems GroceryListItem[]
     createdAt DateTime           @default(now())
+    updatedAt DateTime           @updatedAt
 }
 
 model MealIngredient {
@@ -83,6 +135,8 @@ model MealIngredient {
 
 model MealLog {
     id        Int      @id @default(autoincrement())
+    householdId Int?
+    household   Household? @relation(fields: [householdId], references: [id], onDelete: Cascade)
     name      String
     protein   Protein?
     cookedAt  DateTime
@@ -91,17 +145,33 @@ model MealLog {
     isActive  Boolean  @default(true)
     createdAt DateTime @default(now())
 
+    @@index([householdId, isActive, cookedAt])
     @@index([mealId, isActive, cookedAt])
 }
 
 model GroceryList {
     id          Int               @id @default(autoincrement())
+    householdId Int?
+    household   Household?        @relation(fields: [householdId], references: [id], onDelete: Cascade)
     name        String
     notes       String?
     items       GroceryListItem[]
     sourceMeals GroceryListMeal[]
     createdAt   DateTime          @default(now())
     updatedAt   DateTime          @updatedAt
+}
+
+model MealPreference {
+    id        Int      @id @default(autoincrement())
+    userId    Int
+    mealId    Int
+    score     Int
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, mealId])
 }
 
 model GroceryListMeal {

@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, Suspense, useEffect, useState } from 'react'
+import { ReactNode, Suspense, useEffect } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 interface Tab {
@@ -12,12 +12,12 @@ interface Tab {
 interface PageLayoutProps {
     title: string;
     tabs: Tab[];
+    userEmail?: string;
+    householdName?: string;
 }
 
-const LAST_TAB_STORAGE_KEY = 'meal-planner:last-tab'
-
 const LEGACY_TAB_IDS: Record<string, string> = {
-    meals: 'recipes',
+    recipes: 'meals',
     logs: 'leftovers',
 }
 
@@ -29,44 +29,27 @@ function normalizeTabId(tabId: string | null): string | null {
     return LEGACY_TAB_IDS[tabId] ?? tabId
 }
 
-function PageLayoutContent({ title, tabs }: PageLayoutProps) {
+function PageLayoutContent({ title, tabs, userEmail, householdName }: PageLayoutProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const [savedTab, setSavedTab] = useState<string | null>(null)
-    const [storageChecked, setStorageChecked] = useState(false)
-
-    useEffect(() => {
-        try {
-            setSavedTab(window.localStorage.getItem(LAST_TAB_STORAGE_KEY))
-        } catch {
-            setSavedTab(null)
-        } finally {
-            setStorageChecked(true)
-        }
-    }, [])
 
     const tabFromUrl = normalizeTabId(searchParams.get('tab'))
-    const normalizedSavedTab = normalizeTabId(savedTab)
     const hasValidTabFromUrl = tabFromUrl !== null && tabs.some(tab => tab.id === tabFromUrl)
-    const hasValidSavedTab =
-        normalizedSavedTab !== null && tabs.some(tab => tab.id === normalizedSavedTab)
     const rawTabFromUrl = searchParams.get('tab')
     const needsLegacyTabRedirect =
         rawTabFromUrl !== null && rawTabFromUrl !== tabFromUrl && tabFromUrl !== null
 
     const activeTab = hasValidTabFromUrl
         ? tabFromUrl!
-        : hasValidSavedTab
-            ? normalizedSavedTab!
-            : (tabs[0]?.id || '')
+        : (tabs[0]?.id || '')
 
     useEffect(() => {
-        if (!storageChecked || !activeTab) {
+        if (!activeTab) {
             return
         }
 
-        if (needsLegacyTabRedirect || (!hasValidTabFromUrl && activeTab)) {
+        if (needsLegacyTabRedirect || (rawTabFromUrl !== null && !hasValidTabFromUrl)) {
             const params = new URLSearchParams(searchParams.toString())
             params.set('tab', activeTab)
             router.replace(`${pathname}?${params.toString()}`)
@@ -76,22 +59,22 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
         hasValidTabFromUrl,
         needsLegacyTabRedirect,
         pathname,
+        rawTabFromUrl,
         router,
         searchParams,
-        storageChecked,
     ])
 
     useEffect(() => {
-        if (!storageChecked || !activeTab) {
-            return
-        }
+        for (const tab of tabs) {
+            if (tab.id === activeTab) {
+                continue
+            }
 
-        try {
-            window.localStorage.setItem(LAST_TAB_STORAGE_KEY, activeTab)
-        } catch {
-            // Ignore write errors (e.g. blocked storage).
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('tab', tab.id)
+            router.prefetch(`${pathname}?${params.toString()}`)
         }
-    }, [activeTab, storageChecked])
+    }, [activeTab, pathname, router, searchParams, tabs])
 
     const activeTabContent = tabs.find(tab => tab.id === activeTab)?.content
 
@@ -109,7 +92,10 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
             aria-label="Primary"
         >
             <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-3 md:flex md:gap-4">
+                <div
+                    className="grid md:flex md:gap-4"
+                    style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+                >
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -131,6 +117,34 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     return (
         <div className="h-dvh flex flex-col bg-app-bg">
             <h1 className="sr-only">{title}</h1>
+            {(userEmail || householdName) ? (
+                <header className="shrink-0 border-b border-primary/20 bg-app-surface/90 px-3 py-2 text-xs text-app-muted">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+                        <div className="min-w-0">
+                            {householdName ? (
+                                <span className="font-semibold text-app-text">{householdName}</span>
+                            ) : null}
+                            {userEmail ? (
+                                <span className="ml-2 truncate">{userEmail}</span>
+                            ) : null}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-3">
+                            <a
+                                href="/households"
+                                className="font-semibold text-primary hover:text-primary-text"
+                            >
+                                Households
+                            </a>
+                            <a
+                                href="/logout"
+                                className="font-semibold text-primary hover:text-primary-text"
+                            >
+                                Sign out
+                            </a>
+                        </div>
+                    </div>
+                </header>
+            ) : null}
             {tabNavigation}
 
             {/* Content Area */}
@@ -143,10 +157,15 @@ function PageLayoutContent({ title, tabs }: PageLayoutProps) {
     )
 }
 
-export function PageLayout({ title, tabs }: PageLayoutProps) {
+export function PageLayout({ title, tabs, userEmail, householdName }: PageLayoutProps) {
     return (
         <Suspense fallback={<div className="h-screen flex items-center justify-center bg-app-bg text-app-subtle">Loading...</div>}>
-            <PageLayoutContent title={title} tabs={tabs} />
+            <PageLayoutContent
+                title={title}
+                tabs={tabs}
+                userEmail={userEmail}
+                householdName={householdName}
+            />
         </Suspense>
     )
 }

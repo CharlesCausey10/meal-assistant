@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meal Assistant UX Audit</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fbfaf7;
+      --ink: #211f1b;
+      --muted: #676056;
+      --line: #ded6ca;
+      --card: #fffdf8;
+      --accent: #38635a;
+      --warn: #8a4b22;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 54px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 3.1rem);
+      max-width: 760px;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      margin-top: 34px;
+      padding-top: 22px;
+      border-top: 1px solid var(--line);
+    }
+
+    h3 {
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    p {
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .meta {
+      margin-top: 14px;
+      max-width: 760px;
+      font-size: 1rem;
+    }
+
+    .scorecard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .grade {
+      color: var(--accent);
+      font-size: 1.9rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    ul {
+      margin: 12px 0 0;
+      padding-left: 19px;
+    }
+
+    li {
+      margin: 7px 0;
+    }
+
+    strong {
+      color: var(--ink);
+    }
+
+    .problem {
+      border-left: 4px solid var(--warn);
+      padding-left: 12px;
+      margin-top: 16px;
+    }
+
+    .matrix {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: minmax(190px, 1.1fr) minmax(0, 1fr) minmax(0, 1.4fr);
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row:first-child {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .row span {
+      color: var(--muted);
+    }
+
+    .row:first-child span {
+      color: var(--ink);
+    }
+
+    .priority {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        width: min(100% - 24px, 920px);
+        padding-top: 24px;
+      }
+
+      .scorecard {
+        grid-template-columns: 1fr;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      .row:first-child {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Meal Assistant UX Audit</h1>
+    <p class="meta">
+      Evaluated from the repository structure, app code, and read-only localhost:3000 responses. The app is solid as a meal/list database, but it does not yet behave like a mobile-first assistant for deciding, remembering, and shopping. The product bar should be stricter: the app must be additive, never another household maintenance chore.
+    </p>
+
+    <section class="scorecard" aria-label="Summary scores">
+      <div class="card">
+        <div class="grade">Good</div>
+        <h3>Capture</h3>
+        <p>Recipes, recipe links, ingredients, grocery items, and leftover logs all have working storage models.</p>
+      </div>
+      <div class="card">
+        <div class="grade">Mixed</div>
+        <h3>Retrieval</h3>
+        <p>Search and filters help if the user already knows the meal name, protein, or category.</p>
+      </div>
+      <div class="card">
+        <div class="grade">Weak</div>
+        <h3>Decision Help</h3>
+        <p>The UI rarely answers "what should I eat?" without manual browsing and memory work.</p>
+      </div>
+    </section>
+
+    <h2>Product Principle</h2>
+    <div class="problem">
+      <h3>The app should never require upkeep to be useful.</h3>
+      <p>If the user has to maintain a correct digital pantry, regularly update quantities, or clean up old data before suggestions work, the app has failed. Every feature should help even with partial, stale, or absent data.</p>
+    </div>
+    <div class="problem">
+      <h3>Prefer passive memory over active tracking.</h3>
+      <p>The app should learn from actions users already take: cooked meals, grocery lists, checked items, recipe links, and occasional notes. Manual labels should be optional accelerators, not prerequisites.</p>
+    </div>
+
+    <h2>Core Structural Problems</h2>
+    <div class="problem">
+      <h3>The app is organized around nouns, not user questions.</h3>
+      <p>Recipes, Leftovers, and Grocery are data buckets. The target jobs are situational: tonight, available ingredients, expiring food, forgotten favorites, snacks, and one-off events.</p>
+    </div>
+    <div class="problem">
+      <h3>Ingredients are recipe inputs, not household memory.</h3>
+      <p>The app knows what recipes need, but not what the household tends to keep around, recently bought, or often runs out of. It should infer those signals without asking users to maintain an inventory.</p>
+    </div>
+    <div class="problem">
+      <h3>History is split from recipes and underused.</h3>
+      <p>Leftovers track cooked dates for expiration, and recipes show last cooked, but the app does not surface patterns like recent repeats, old favorites, forgotten combinations, or "worked well with."</p>
+    </div>
+    <div class="problem">
+      <h3>Grocery lists are event lists, not a shopping planning system.</h3>
+      <p>Generated recipe ingredients and manual items work, but staples, recurring needs, special occasions, and "missing for this meal" are not first-class concepts.</p>
+    </div>
+
+    <h2>Question Fit</h2>
+    <div class="matrix">
+      <div class="row">
+        <span>User question</span>
+        <span>Current answer</span>
+        <span>Gap</span>
+      </div>
+      <div class="row">
+        <span>What should we eat tonight?</span>
+        <span>Browse Recipes sorted by preference.</span>
+        <span>No quick chooser using time, recency, effort, leftovers, mood, variety, or likely-on-hand signals.</span>
+      </div>
+      <div class="row">
+        <span>What can we make from what we have?</span>
+        <span>Not directly supported.</span>
+        <span>Needs low-confidence suggestions from recent grocery activity, staples, meal history, and optional "I have this" marks, not a required pantry database.</span>
+      </div>
+      <div class="row">
+        <span>Favorite meals from the past?</span>
+        <span>Preference scores and last cooked dates.</span>
+        <span>Needs cooked count, recency, seasonality, "not made in a while," and favorites from logs.</span>
+      </div>
+      <div class="row">
+        <span>Online recipe we like?</span>
+        <span>Recipe URL on meal cards.</span>
+        <span>Good base, but links are buried in browsing. Add saved recipe source, notes, and URL search.</span>
+      </div>
+      <div class="row">
+        <span>Are leftovers expired?</span>
+        <span>Leftovers tab shows freshness by protein.</span>
+        <span>Best-supported job. It still lacks servings, container location, opened date, and "eat soon" prompts.</span>
+      </div>
+      <div class="row">
+        <span>What do we need from the store?</span>
+        <span>Recipe-generated and manual grocery lists.</span>
+        <span>No passive staples memory, recurring cadence, likely-ran-out hints, or "for occasion" grouping.</span>
+      </div>
+      <div class="row">
+        <span>Snack ideas beyond grab-and-go?</span>
+        <span>Snack category filter.</span>
+        <span>Needs snack type, prep time, effort, filling/sweet/savory, and combinations.</span>
+      </div>
+      <div class="row">
+        <span>Forgotten food combinations?</span>
+        <span>Only visible if encoded as meals.</span>
+        <span>Needs a lightweight combo model: ingredients that go together, tags, pairings, and log-derived memories.</span>
+      </div>
+    </div>
+
+    <h2>Missing Mental Models</h2>
+    <ul>
+      <li><strong>Tonight board:</strong> a home screen with 3-5 suggestions, "use soon" leftovers, "not made lately," and "probably easy from usual staples."</li>
+      <li><strong>Household memory:</strong> inferred staples, recent purchases, frequently checked-off items, and optional quick confirmations.</li>
+      <li><strong>Meal readiness:</strong> each recipe should show likely easy, likely needs shopping, uses leftovers, or unknown. Avoid pretending precision the app does not have.</li>
+      <li><strong>Memory:</strong> cooked count, last cooked, liked/disliked notes, "forgotten favorite," and recurring combinations.</li>
+      <li><strong>Occasions:</strong> grocery lists should support "weekly staples," "recipe night," "party," and one-off notes as separate reasons to buy.</li>
+      <li><strong>Effort/context:</strong> time, cleanup, equipment, kid-friendly, comfort food, light meal, snack, and make-ahead labels.</li>
+    </ul>
+
+    <h2>Mobile Intuition Issues</h2>
+    <ul>
+      <li>Bottom tabs are easy to reach, but the first screen is still a database browser, not an assistant dashboard.</li>
+      <li>The main mobile action is add, yet the primary user intent is often decide, search by situation, or build a list.</li>
+      <li>Filters are categorical chips only; they do not map to common natural prompts like "quick," "cheap," "uses chicken," "snack," or "not had lately."</li>
+      <li>Recipe cards spend space on edit/delete/cook/list actions but not enough on decision signals: readiness, effort, last cooked, missing items, and why it is recommended.</li>
+      <li>Ingredient management is hidden under Grocery, but exposing it as maintenance would be the wrong fix. Ingredient intelligence should mostly come from recipes and shopping behavior.</li>
+    </ul>
+
+    <h2>Recommended Direction</h2>
+    <ul>
+      <li><span class="priority">1. Make the default screen answer "What should we eat?"</span> Show suggestions grouped by "easy tonight," "uses leftovers," "forgotten favorites," and "probably have most of this."</li>
+      <li><span class="priority">2. Build passive household memory.</span> Infer staples and likely-on-hand items from grocery lists, checked purchases, meal logs, and repeat behavior. Let users correct it, but never require correction.</li>
+      <li><span class="priority">3. Add confidence-based readiness.</span> Use labels like likely, maybe, and needs shopping instead of exact pantry claims. Suggestions should degrade gracefully when data is stale.</li>
+      <li><span class="priority">4. Turn history into recommendations.</span> Track cooked count and expose "last cooked," "often liked," "not made in 60+ days," and "similar to this."</li>
+      <li><span class="priority">5. Split grocery intent without extra filing.</span> Auto-tag items as likely staples, recipe needs, and one-offs when possible, while still allowing one combined shopping view.</li>
+      <li><span class="priority">6. Create a quick "Ideas" mode.</span> Natural chips such as Dinner, Snack, Quick, Uses leftovers, Probably have, Online recipe, Forgot about, and Low effort.</li>
+    </ul>
+
+    <h2>Small High-Leverage Fixes</h2>
+    <ul>
+      <li>Rename "Recipes" to "Meals" or "Ideas" if many entries are not full recipes.</li>
+      <li>Show recipe URL presence as a scannable badge, and allow searching/filtering by "has online recipe."</li>
+      <li>Add "likely needs" preview on meal cards from recipe ingredients and recent grocery history.</li>
+      <li>Avoid making Ingredients a primary chore screen; surface it only when editing a meal or resolving an obvious duplicate.</li>
+      <li>Protect duplicate-ish entries by making category variants intentional, such as "Yogurt - breakfast" versus "Yogurt - snack."</li>
+      <li>Add optional one-tap memory prompts after cooking: "liked it," "served with," "easy," and "make again."</li>
+    </ul>
+  </main>
+</body>
+</html>

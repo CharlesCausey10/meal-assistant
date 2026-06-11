@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meal Assistant Dashboard Proposal</title>
+  <style>
+    :root {
+      --bg: #f7f2ea;
+      --surface: #fffaf3;
+      --surface-soft: #f1e7d8;
+      --surface-raised: #ffffff;
+      --text: #332d26;
+      --muted: #756a5e;
+      --subtle: #9a8d7d;
+      --border: #d8c8b4;
+      --primary: #557a46;
+      --primary-dark: #2f4a27;
+      --primary-soft: #e4eddb;
+      --accent: #b7654f;
+      --accent-soft: #f1dfd5;
+      --info: #557d8a;
+      --info-soft: #dcebf0;
+      --warning: #b88934;
+      --warning-soft: #f6e8c8;
+      --danger: #a74f45;
+      --danger-soft: #f2d7d1;
+      --shadow: 0 16px 42px rgba(51, 45, 38, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(228, 237, 219, 0.55), transparent 260px),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button {
+      border: 0;
+      font: inherit;
+      color: inherit;
+      cursor: default;
+    }
+
+    .shell {
+      min-height: 100dvh;
+      display: grid;
+      place-items: start center;
+      padding: 18px 12px 28px;
+    }
+
+    .phone {
+      width: min(100%, 430px);
+      min-height: min(920px, calc(100dvh - 36px));
+      background: var(--bg);
+      border: 1px solid rgba(216, 200, 180, 0.8);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .app {
+      height: 100%;
+      min-height: min(920px, calc(100dvh - 36px));
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 18px 12px;
+      background: linear-gradient(180deg, rgba(255, 250, 243, 0.92), rgba(255, 250, 243, 0.74));
+      border-bottom: 1px solid rgba(216, 200, 180, 0.7);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .kicker {
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 650;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.82rem;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 38% 34%, #fff4d8 0 18%, transparent 19%),
+        linear-gradient(145deg, var(--accent), var(--primary));
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 1.25rem;
+      box-shadow: 0 8px 20px rgba(51, 45, 38, 0.16);
+    }
+
+    .intent-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .intent {
+      min-height: 70px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid rgba(216, 200, 180, 0.9);
+      padding: 9px 6px 8px;
+      text-align: center;
+      display: grid;
+      place-items: center;
+      gap: 4px;
+    }
+
+    .intent span:first-child {
+      width: 30px;
+      height: 30px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      font-size: 1rem;
+    }
+
+    .intent strong {
+      font-size: 0.78rem;
+      line-height: 1.1;
+      font-weight: 760;
+    }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 92px;
+    }
+
+    .section {
+      margin-top: 18px;
+    }
+
+    .section:first-child {
+      margin-top: 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 2px 9px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.02rem;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .section-note {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .text-link {
+      color: var(--primary-dark);
+      background: transparent;
+      font-size: 0.82rem;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .hero-card {
+      position: relative;
+      min-height: 226px;
+      border-radius: 22px;
+      overflow: hidden;
+      padding: 16px;
+      color: #fffaf3;
+      background:
+        linear-gradient(140deg, rgba(47, 74, 39, 0.92), rgba(85, 125, 138, 0.78)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='340' viewBox='0 0 500 340'%3E%3Crect width='500' height='340' fill='%238c674b'/%3E%3Cellipse cx='345' cy='165' rx='150' ry='105' fill='%23e9d7b8'/%3E%3Cellipse cx='350' cy='160' rx='118' ry='78' fill='%23d05f43'/%3E%3Ccircle cx='295' cy='132' r='19' fill='%23f8e8cc'/%3E%3Ccircle cx='379' cy='204' r='22' fill='%23f8e8cc'/%3E%3Cpath d='M245 223c60 25 147 17 205-24' stroke='%23557a46' stroke-width='14' stroke-linecap='round' fill='none'/%3E%3Crect x='28' y='42' width='176' height='232' rx='28' fill='%23f7f2ea' opacity='.88'/%3E%3Ccircle cx='84' cy='98' r='26' fill='%23b7654f'/%3E%3Ccircle cx='148' cy='145' r='34' fill='%23557a46'/%3E%3Crect x='70' y='196' width='104' height='22' rx='11' fill='%23b88934'/%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 14px 30px rgba(47, 74, 39, 0.24);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hero-card:before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(20, 25, 18, 0.1), rgba(20, 25, 18, 0.55));
+    }
+
+    .hero-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 28px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(255, 250, 243, 0.17);
+      color: inherit;
+      border: 1px solid rgba(255, 250, 243, 0.32);
+      font-size: 0.74rem;
+      font-weight: 760;
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-title {
+      margin: 52px 0 4px;
+      font-size: 1.76rem;
+      line-height: 1.06;
+      max-width: 300px;
+    }
+
+    .hero-copy {
+      margin: 0;
+      max-width: 320px;
+      color: rgba(255, 250, 243, 0.88);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .primary-action,
+    .secondary-action {
+      min-height: 44px;
+      border-radius: 14px;
+      padding: 0 14px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .primary-action {
+      flex: 1;
+      background: var(--surface);
+      color: var(--primary-dark);
+    }
+
+    .secondary-action {
+      background: rgba(255, 250, 243, 0.16);
+      color: #fffaf3;
+      border: 1px solid rgba(255, 250, 243, 0.28);
+    }
+
+    .meal-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 2px 2px 8px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .mini-card {
+      flex: 0 0 74%;
+      scroll-snap-align: start;
+      background: var(--surface);
+      border: 1px solid rgba(216, 200, 180, 0.9);
+      border-radius: 18px;
+      padding: 13px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-card.compact {
+      flex-basis: 66%;
+    }
+
+    .meal-top {
+      display: flex;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      font-size: 1.45rem;
+      background: var(--surface-soft);
+      color: var(--primary-dark);
+    }
+
+    .thumb.soup {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .thumb.snack {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .meal-name {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.18;
+      font-weight: 830;
+    }
+
+    .meal-reason {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.32;
+    }
+
+    .signal-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .signal {
+      min-height: 25px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      font-size: 0.72rem;
+      font-weight: 760;
+    }
+
+    .signal.info {
+      background: var(--info-soft);
+      color: #355a63;
+    }
+
+    .signal.warn {
+      background: var(--warning-soft);
+      color: #704f16;
+    }
+
+    .wide-card {
+      background: var(--surface);
+      border: 1px solid rgba(216, 200, 180, 0.9);
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .leftover {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 5px var(--warning-soft);
+    }
+
+    .status-dot-good {
+      background: var(--primary);
+      box-shadow: 0 0 0 5px var(--primary-soft);
+    }
+
+    .leftover h3,
+    .grocery h3 {
+      margin: 0;
+      font-size: 0.98rem;
+      line-height: 1.2;
+    }
+
+    .leftover p,
+    .grocery p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .pill-button {
+      min-height: 34px;
+      border-radius: 12px;
+      padding: 0 10px;
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      font-size: 0.78rem;
+      font-weight: 820;
+    }
+
+    .grocery {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .grocery-list {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      grid-column: 1 / -1;
+    }
+
+    .grocery-list span {
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .idea-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .idea {
+      min-height: 104px;
+      border-radius: 18px;
+      padding: 12px;
+      border: 1px solid rgba(216, 200, 180, 0.9);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .idea strong {
+      font-size: 0.98rem;
+      line-height: 1.16;
+    }
+
+    .idea span {
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.28;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      padding: 9px 12px 12px;
+      background: rgba(255, 250, 243, 0.94);
+      border-top: 1px solid rgba(216, 200, 180, 0.88);
+      backdrop-filter: blur(14px);
+    }
+
+    .nav-item {
+      min-height: 54px;
+      border-radius: 15px;
+      background: transparent;
+      color: var(--subtle);
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      font-size: 0.72rem;
+      font-weight: 760;
+    }
+
+    .nav-item span:first-child {
+      font-size: 1.15rem;
+    }
+
+    .nav-item.active {
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+    }
+
+    @media (min-width: 760px) {
+      .shell {
+        padding: 32px;
+      }
+
+      .phone {
+        width: min(100%, 980px);
+        min-height: 820px;
+        border-radius: 24px;
+      }
+
+      .app {
+        min-height: 820px;
+      }
+
+      header {
+        padding: 26px 28px 18px;
+      }
+
+      main {
+        padding: 20px 24px 100px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+        gap: 20px;
+        align-items: start;
+      }
+
+      .section {
+        margin-top: 0;
+      }
+
+      .section.full {
+        grid-column: 1 / -1;
+      }
+
+      .hero-card {
+        min-height: 310px;
+      }
+
+      .meal-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: visible;
+      }
+
+      .mini-card,
+      .mini-card.compact {
+        flex: initial;
+      }
+
+      .bottom-nav {
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(520px, calc(100% - 32px));
+        bottom: 18px;
+        border: 1px solid rgba(216, 200, 180, 0.88);
+        border-radius: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="phone" role="img" aria-label="Mobile-first dashboard proposal for Meal Assistant">
+      <div class="app">
+        <header>
+          <div class="topbar">
+            <div>
+              <p class="kicker">Wednesday evening</p>
+              <h1>What sounds good?</h1>
+            </div>
+            <div class="avatar" aria-hidden="true">🍽️</div>
+          </div>
+
+          <div class="intent-row" aria-label="Quick idea filters">
+            <button class="intent"><span>★</span><strong>Top Rated</strong></button>
+            <button class="intent"><span>🧊</span><strong>Use Soon</strong></button>
+            <button class="intent"><span>🥪</span><strong>Snack</strong></button>
+            <button class="intent"><span>🛒</span><strong>Shop</strong></button>
+          </div>
+        </header>
+
+        <main>
+          <section class="section">
+            <div class="section-head">
+              <div>
+                <h2>Top dinner idea</h2>
+                <p class="section-note">Strict signals from saved meals and logs</p>
+              </div>
+            </div>
+
+            <article class="hero-card">
+              <div class="tag-row">
+                <span class="tag">8/10</span>
+                <span class="tag">Last cooked 94d ago</span>
+                <span class="tag">Has recipe</span>
+                <span class="tag">6 ingredients</span>
+              </div>
+              <div>
+                <h3 class="hero-title">Korean Beef with Rice</h3>
+                <p class="hero-copy">Dinner category, high preference, saved recipe link, and ingredient data are all visible.</p>
+                <div class="actions">
+                  <button class="primary-action">Cook this</button>
+                  <button class="secondary-action">Add ingredients</button>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div>
+                <h2>Other good ideas</h2>
+                <p class="section-note">Ranked with fields the app already stores</p>
+              </div>
+              <button class="text-link">Shuffle</button>
+            </div>
+
+            <div class="meal-strip">
+              <article class="mini-card">
+                <div class="meal-top">
+                  <div class="thumb">🌮</div>
+                  <div>
+                    <h3 class="meal-name">Walking Tacos</h3>
+                    <p class="meal-reason">Dinner idea with a high preference score.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal">8/10</span>
+                  <span class="signal warn">No ingredients saved</span>
+                </div>
+              </article>
+
+              <article class="mini-card">
+                <div class="meal-top">
+                  <div class="thumb soup">🥣</div>
+                  <div>
+                    <h3 class="meal-name">Grilled Cheese &amp; Tomato Soup</h3>
+                    <p class="meal-reason">Dinner idea with no recent meal log.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal">8/10</span>
+                  <span class="signal info">Not cooked lately</span>
+                </div>
+              </article>
+
+              <article class="mini-card">
+                <div class="meal-top">
+                  <div class="thumb snack">🍌</div>
+                  <div>
+                    <h3 class="meal-name">Peanut Butter Banana</h3>
+                    <p class="meal-reason">Snack category with saved ingredient data.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal">Snack</span>
+                  <span class="signal info">3 ingredients</span>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div>
+                <h2>Use soon</h2>
+                <p class="section-note">Only showing things already logged</p>
+              </div>
+              <button class="text-link">Leftovers</button>
+            </div>
+
+            <div class="meal-strip">
+              <article class="mini-card compact">
+                <div class="meal-top">
+                  <div class="thumb soup"><span class="status-dot" aria-hidden="true"></span></div>
+                  <div>
+                    <h3 class="meal-name">Cracker Chicken with Rice</h3>
+                    <p class="meal-reason">1 day left from cooked date and protein rule.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal warn">1 day left</span>
+                  <span class="signal">Logged leftover</span>
+                </div>
+              </article>
+
+              <article class="mini-card compact">
+                <div class="meal-top">
+                  <div class="thumb"><span class="status-dot status-dot-good" aria-hidden="true"></span></div>
+                  <div>
+                    <h3 class="meal-name">Korean Beef with Rice</h3>
+                    <p class="meal-reason">3 days left from cooked date and protein rule.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal">3 days left</span>
+                  <span class="signal info">Linked meal</span>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div>
+                <h2>Shopping signals</h2>
+                <p class="section-note">Computed from grocery-list items</p>
+              </div>
+              <button class="text-link">List</button>
+            </div>
+
+            <article class="wide-card grocery">
+              <div>
+                <h3>Often checked off</h3>
+                <p>Frequency from past grocery lists.</p>
+              </div>
+              <button class="pill-button">View</button>
+              <div class="grocery-list">
+                <span>Ground beef · 6x</span>
+                <span>Rotisserie chicken · 5x</span>
+                <span>Rice · 5x</span>
+                <span>Bananas · 4x</span>
+              </div>
+            </article>
+          </section>
+
+          <section class="section full">
+            <div class="section-head">
+              <div>
+                <h2>Forgotten favorites</h2>
+                <p class="section-note">High preference plus no recent log</p>
+              </div>
+            </div>
+
+            <div class="meal-strip">
+              <article class="mini-card compact">
+                <div class="meal-top">
+                  <div class="thumb">🍯</div>
+                  <div>
+                    <h3 class="meal-name">Honey Garlic Chicken Nuggets</h3>
+                    <p class="meal-reason">High preference and no recent cooked log.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal">9/10</span>
+                  <span class="signal info">3 ingredients</span>
+                </div>
+              </article>
+
+              <article class="mini-card compact">
+                <div class="meal-top">
+                  <div class="thumb snack">🥑</div>
+                  <div>
+                    <h3 class="meal-name">Chips &amp; Guac</h3>
+                    <p class="meal-reason">Snack category favorite without a recent log.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal">8/10</span>
+                  <span class="signal warn">No ingredients saved</span>
+                </div>
+              </article>
+
+              <article class="mini-card compact">
+                <div class="meal-top">
+                  <div class="thumb soup">🍝</div>
+                  <div>
+                    <h3 class="meal-name">Chicken Parm</h3>
+                    <p class="meal-reason">Has recipe link and full ingredient data.</p>
+                  </div>
+                </div>
+                <div class="signal-row">
+                  <span class="signal">8/10</span>
+                  <span class="signal info">10 ingredients</span>
+                </div>
+              </article>
+            </div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+          <button class="nav-item active"><span>✨</span><span>Today</span></button>
+          <button class="nav-item"><span>🍽️</span><span>Meals</span></button>
+          <button class="nav-item"><span>🧊</span><span>Leftovers</span></button>
+          <button class="nav-item"><span>🛒</span><span>Grocery</span></button>
+        </nav>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

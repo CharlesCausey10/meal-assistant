@@ -6,12 +6,14 @@ This document is a quick orientation guide for agents working in this repository
 
 Meal Planner is a full-stack Next.js App Router application for managing meals, ingredients, cooked-meal logs, and grocery lists. It uses React client components for interactive UI, Next server components/server actions for data loading and mutations, and Prisma 7 with PostgreSQL for persistence.
 
-The app is organized around four user-facing areas:
+The app is organized around six user-facing areas:
 
-- Recipes: create, edit, delete, filter, and browse meal templates with ingredients; cook links a `MealLog` via `mealId`.
+- Today: the first screen dashboard with deterministic meal suggestions from saved meals, cooked logs, active leftovers, recipe URLs, preference scores, and ingredient counts.
+- Meals: create, edit, delete, filter, and browse meal templates with ingredients; cook links a `MealLog` via `mealId`.
 - Leftovers: record cooked meals and display freshness/expiration status; removing an entry sets `MealLog.isActive` to false.
 - Grocery lists: create lists from selected meals, aggregate meal ingredients, manually add/edit/check off items, copy lists, and hide checked/amounts.
 - Ingredients: maintain the reusable ingredient catalog used by meals and grocery lists.
+- Discover: browse opted-in meal templates from other households, hide suggestions locally for 30 days, and copy selected meals into the current household.
 
 ## Top-Level Layout
 
@@ -34,6 +36,7 @@ The app is organized around four user-facing areas:
 Important generated or environment-specific files:
 
 - `.env` contains `DATABASE_URL` and should not be documented with secrets or committed.
+- `.env.example` documents the required database and WorkOS environment variable names without real secrets.
 - `.next/`, `node_modules/`, and `generated/` are build/dependency/generated output.
 - `generated/prisma/` appears to be generated Prisma output from an earlier/client-generation configuration; the application imports Prisma from `@prisma/client`, not from `generated/prisma`.
 
@@ -66,6 +69,15 @@ npm run prisma   # run Prisma CLI
 - Uses `PrismaPg` from `@prisma/adapter-pg`.
 - Reads `process.env.DATABASE_URL`.
 
+### Authentication Context
+
+`lib/auth.ts` contains WorkOS/local auth helpers:
+
+- `getAuthenticatedContext()` is used by server components and route handlers that should require sign-in.
+- `getAuthenticatedActionContext()` is used by server actions; it calls `withAuth()` without `ensureSignedIn` and redirects to sign-in when no user exists.
+- The bootstrap path links the first signed-in WorkOS user as `OWNER` of `Personal Household` if no WorkOS organization context exists yet.
+- If WorkOS supplies an organization ID that has no local household, the helper creates a local household shell with that `workosOrganizationId`.
+
 ### Prisma Schema
 
 `prisma/schema.prisma` is the source of truth for models and enums.
@@ -75,30 +87,45 @@ Enums:
 - `Protein`: `CHICKEN_BREAST`, `CHICKEN_THIGHS`, `ROTISSERIE_CHICKEN`, `GROUND_BEEF`, `PORK_BUTT`, `FISH`, `EGGS`.
 - `Category`: `BREAKFAST`, `LUNCH`, `DINNER`, `SIDE_STARTER`, `SNACK`, `DESSERT`.
 - `IngredientCategory`: produce, meat, seafood, dairy, drinks, grains/bread, nuts/seeds, baking, oils/vinegars, condiments, canned goods, frozen, snacks/chips, spices/herbs, sweets, other.
+- `HouseholdRole`: `OWNER`, `MEMBER`.
 
 Models:
 
-- `Meal`: meal template with optional protein, required category, optional preference, notes, recipe URL, meal ingredients, and grocery-list uses.
-- `Ingredient`: reusable ingredient catalog entry with unique `name` and category.
+- `User`: local user profile linked to a WorkOS user ID, with household memberships and per-user meal preferences.
+- `Household`: local household/workspace linked to an optional WorkOS organization ID; owns meals, ingredients, logs, grocery lists, one active app-level invite token, and nullable Discover sharing consent.
+- `HouseholdMember`: join table between users and households with an owner/member role.
+- `Meal`: meal template with optional household ownership. Normal user-facing meals should be household-owned; new households start with no default meals and add meals manually or copy them from Discover.
+- `MealPreference`: per-user 1-10 preference score for a meal. Existing scores were migrated here from the removed `Meal.preference` column.
+- `Ingredient`: reusable ingredient catalog entry with optional household ownership (`householdId = null` means global default/template), name, and category.
 - `MealIngredient`: join table between meals and ingredients, with `quantity` and `unit`; unique per `(mealId, ingredientId)`.
-- `MealLog`: cooked-meal log entry with name, optional protein, cooked date, optional `mealId` (recipe link), and `isActive` (soft delete).
-- `GroceryList`: saved grocery list with notes, items, source meals, created/updated timestamps.
+- `MealLog`: household-linked cooked-meal log entry with name, optional protein, cooked date, optional `mealId` (recipe link), and `isActive` (soft delete).
+- `GroceryList`: household-linked saved grocery list with notes, items, source meals, created/updated timestamps.
 - `GroceryListMeal`: join table tracking which meals contributed to a grocery list.
 - `GroceryListItem`: grocery item snapshot with optional ingredient link, quantity, unit, note, checked state, category, and sort order.
 
-Migrations live in `prisma/migrations/`. Notable migrations add the base schema, ingredients, category enum expansions, recipe URLs, grocery lists, drinks, and snacks/chips.
+Migrations live in `prisma/migrations/`. Notable migrations add the base schema, ingredients, category enum expansions, recipe URLs, grocery lists, drinks, snacks/chips, and the first phase of user/household schema work.
+
+`USER_HOUSEHOLD_AUTH_PLAN.html` is a standalone implementation plan for the WorkOS, user, household, default ingredient, and meal preference migration. Keep it updated when the auth/data-model plan changes.
 
 ## Next App Structure
 
 ### Routing Entry Points
 
 - `app/layout.tsx`: root HTML/body wrapper and global metadata.
-- `app/page.tsx`: main server component for `/`. It reads `searchParams`, routes the special `?tab=ingredients` view, and otherwise renders the tabbed page layout with Recipes, Leftovers, and Grocery tabs.
+- `app/page.tsx`: protected main server component for `/`. It syncs the current WorkOS user into local user/household context, reads `searchParams`, routes the special `?tab=ingredients` view, and otherwise renders the tabbed page layout with Today, Meals, Leftovers, Grocery, and Discover tabs.
+- `proxy.ts`: Next.js 16 AuthKit proxy for WorkOS session handling.
+- `app/login/route.ts`: starts the WorkOS AuthKit sign-in flow.
+  - Accepts an optional `returnPathname`, but only uses app-local paths that begin with a single `/`.
+- `app/callback/route.ts`: WorkOS AuthKit callback route; syncs the authenticated WorkOS user into local tables.
+- `app/logout/route.ts`: signs the current user out through WorkOS.
+- `app/households/page.tsx`: household management screen for linking the current household to WorkOS, copying/refreshing the invite link, removing members, and letting non-owner members leave into a new personal household through a confirmation modal with copy options.
+- `app/invite/[token]/page.tsx`: app-level household invite acceptance page. Signed-out users are sent through `/login` and returned to the invite; signed-in users can join the household.
+- `app/dashboard-tab.tsx`: server-rendered first-screen dashboard. It computes meal stats from `MealLog`, picks the time-of-day meal window, and renders Top Breakfast/Brunch/Lunch/Dinner/Midnight Snack Ideas, Use Soon, Forgotten Favorites, and Snack Ideas.
 - `app/api/ingredients/route.ts`: API route used by client-side ingredient autocomplete and creation.
 
 The app uses query parameters rather than separate URL routes for most navigation:
 
-- `tab=recipes`, `tab=leftovers`, `tab=grocery`, `tab=ingredients` (legacy `tab=meals` and `tab=logs` redirect in `page-layout.tsx`).
+- `tab=today`, `tab=meals`, `tab=leftovers`, `tab=grocery`, `tab=ingredients` (legacy `tab=recipes` and `tab=logs` redirect in `page-layout.tsx`).
 - Meal filters: `search`, `protein`, `category`.
 - Grocery selection: `listId`.
 
@@ -107,25 +134,40 @@ The app uses query parameters rather than separate URL routes for most navigatio
 These files fetch server data and pass serialized data into client components:
 
 - `app/meal-planner-tab.tsx`
-  - Fetches meals with nested meal ingredients and ingredient records.
-  - Fetches grocery-list names for the "Add to List" flow.
-  - Sorts meals by `preference desc`, then `createdAt desc`.
-  - Uses `serializeMeals()` to convert Prisma Decimal quantities before crossing into client components.
+  - Fetches current-household meals with nested meal ingredients and ingredient records.
+  - Fetches current-household grocery-list names for the "Add to List" flow.
+  - Fetches current-household cooked meal logs linked to meals to compute `lastCookedAt`, `cookedCount`, and `daysSinceCooked`.
+  - Includes the current user's `MealPreference` row and sorts serialized meals by per-user preference, then `createdAt desc`.
+  - Uses `serializeMeals()` to convert Prisma Decimal quantities and attach cooked stats before crossing into client components.
+
+- `app/dashboard-tab.tsx`
+  - Fetches current-household meals with ingredients, meal-linked cooked logs, and active leftovers.
+  - Computes `lastCookedAt`, `cookedCount`, and `daysSinceCooked` from `MealLog`.
+  - Uses the current time to title the top meal rail as Breakfast (4-10:30), Brunch (10:30-12), Lunch (12-3), Dinner (3-11), or Midnight Snack (11-4).
+  - Brunch interleaves ranked breakfast and lunch meals; the other windows stick to a single category.
+  - Renders horizontal browse rails for Top Ideas, Use Soon, Forgotten Favorites, and Snack Ideas.
+  - Excludes dessert meals from dashboard suggestion rails; desserts remain available in the Meals tab.
+  - Avoids pantry/readiness claims; chips are limited to deterministic signals such as preference score, last cooked age, cooked count, recipe URL presence, ingredient count, and leftover expiration.
 
 - `app/meal-log-tab.tsx`
   - Fetches `MealLog` records ordered by `cookedAt desc`.
   - Renders `MealLogContent`.
 
 - `app/grocery-tab.tsx`
-  - Fetches all grocery lists with source meals and items.
-  - Fetches meals that have ingredients for list generation.
+  - Fetches current-household grocery lists with source meals and items.
+  - Fetches current-household meals that have ingredients for list generation.
   - Selects the current list from `listId` or falls back to the first list.
   - Serializes grocery item Decimal quantities.
   - Defines ingredient category order and grouped display order.
 
 - `app/ingredient-edit-tab.tsx`
-  - Fetches all ingredients sorted by category/name.
+  - Fetches current-household ingredients sorted by category/name.
   - Supplies ingredient category options to the editor.
+
+- `app/discover-tab.tsx`
+  - Fetches meals from other households where `discoverableMealsOptIn = true`, filters duplicates, then passes up to 100 suggestions to the client.
+  - Excludes meals with names that already exist in the current household.
+  - Serializes meal ingredient Decimal quantities before passing suggestions to the client.
 
 ### Server Actions
 
@@ -158,6 +200,17 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
   - `deleteIngredient(formData)`.
   - Handles unique-name Prisma errors as user-readable errors.
 
+- `app/actions-households.ts`
+  - `linkCurrentHouseholdToWorkOS(formData)`: owner-only action that creates a WorkOS Organization for the current local household, creates a WorkOS organization membership for the current user, stores `workosOrganizationId`, refreshes the session to the organization, and redirects home.
+  - `leaveAndCopyHousehold(formData)`: member-only action that creates a new WorkOS Organization and personal household for the current user, optionally copies the current household's meals, ingredients, that user's meal preferences, and meal logs, removes the user from the old household, refreshes session organization context, and redirects home. Meal logs can only be copied when meals are copied. The copy path bulk-inserts ingredients, meal ingredients, preferences, and logs to avoid interactive transaction timeouts, and it cleans up the newly created household/WorkOS Organization if copying fails before the membership move. Owners cannot use this because they already control their household.
+  - `refreshHouseholdInviteLink()`: owner-only action that rotates the current household invite token.
+  - `updateDiscoverableMealsOptIn(formData)`: owner-only action that sets the household Discover sharing tri-state from undecided to allowed/private.
+  - `acceptHouseholdInvite(formData)`: accepts an app-level household invite, moves the user out of their current household, deletes their old household only when it becomes empty, creates the WorkOS organization membership, creates the local household membership, refreshes session organization context, and redirects home.
+  - `removeHouseholdMember(formData)`: owner-only action that moves another member into a new personal household with copied meals/ingredients, then removes that member from WorkOS and the current local household.
+
+- `app/actions-discover.ts`
+  - `copyDiscoveredMeal(mealId)`: validates that the source meal belongs to an opted-in household, skips duplicate meal names already in the current household, and copies the selected meal plus its used ingredients into the current household.
+
 ### Client Content Components
 
 - `app/meal-planner-content.tsx`
@@ -185,11 +238,18 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
   - Server fetch is in `ingredient-edit-tab.tsx`.
   - Client editing UI is in `ingredient-edit-content.tsx`.
 
+- `app/discover-content.tsx`
+  - Client shell for the Discover tab.
+  - Uses browser `localStorage` under the current local user ID to hide copied or dismissed meal IDs for 30 days.
+  - Shows specific empty states for no shared meals, all shared meals already existing by name, and all suggestions hidden in this browser.
+  - Does not write passive impressions, hides, or skips to the database.
+
 ## Component Directory
 
 `app/components/` contains reusable UI and larger feature components:
 
 - `page-layout.tsx`: tabbed full-page layout used by `/`.
+- `leave-household-control.tsx`: member-only leave-household modal with pre-checked copy options for meals/ingredients/preferences and meal logs.
 - `responsive-modal.tsx`: responsive modal/drawer-like overlay used for mobile and focused forms.
 - `meal-form.tsx`: create meal form.
 - `meal-log-form.tsx`: create cooked-meal log form.
@@ -208,6 +268,7 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
 
 - `app/utils/convert-prisma.ts`
   - Converts Prisma Decimal `quantity` fields to plain numbers for client-component serialization.
+  - Flattens the current user's included `MealPreference` relation into a client-facing `preference` value so existing meal cards/forms can keep using that field shape.
 
 - `app/utils/expiration.ts`
   - Protein-specific cooked-meal expiration logic.
@@ -218,6 +279,10 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
 
 - `app/utils/preference.ts`
   - Filters preference input to numeric values from 0 through 10.
+
+- `lib/household-copy.ts`
+  - Shared copy helpers for copying global ingredients, copying meals plus ingredients/preferences, and copying meal logs between households.
+  - When specific meal IDs are provided, only ingredients used by those meals are copied; full household copy flows still copy the full source ingredient catalog.
 
 ## Styling And UI Notes
 
@@ -272,6 +337,11 @@ This route is used by ingredient autocomplete/manual item flows that run in clie
   - Update `app/page.tsx`.
   - Update `app/components/page-layout.tsx` if tab rendering behavior changes.
 
+- Change the Today dashboard:
+  - Start in `app/dashboard-tab.tsx`.
+  - Keep suggestions deterministic from existing data; do not add pantry-maintenance assumptions or "ready now" claims without a non-chore data source.
+  - Reuse `serializeMeals()` when meal ingredients or cooked stats cross into client-facing component boundaries.
+
 ## Agent Notes
 
 - This repo uses server components for initial data loading and client components for interactivity.
@@ -279,4 +349,4 @@ This route is used by ingredient autocomplete/manual item flows that run in clie
 - Most mutations revalidate `/`; if introducing more routes or finer-grained caching, revisit revalidation paths.
 - The app currently has duplicated ingredient category order arrays in `grocery-tab.tsx` and `ingredient-edit-tab.tsx`; future cleanup could centralize this.
 - `app/components/grocery-list-content.tsx` is the largest and most stateful file. Changes there should be made carefully and verified on both desktop and mobile layouts.
-- `README.md` describes the original meal/log scope and some setup steps, but this file is more complete for current code structure, especially grocery-list and ingredient-edit areas.
+- `README.md` describes the current app, local environment variables, and WorkOS production setup checklist. This file remains more complete for code navigation and common change locations.

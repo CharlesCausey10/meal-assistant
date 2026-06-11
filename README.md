@@ -1,113 +1,87 @@
-# Meal Planner
+# Meal Assistant
 
-A full-stack meal planning app built with Next.js, React, Prisma, and PostgreSQL.
-
-The app helps you:
-
-- Save meals with category, protein, preference score, recipe URL, and ingredients.
-- Browse and filter meals by search text, protein, and category.
-- Log cooked meals and track freshness based on protein-specific expiration rules.
+A full-stack household meal planning app built with Next.js, React, Prisma, PostgreSQL, and WorkOS AuthKit.
 
 ## What The App Does
 
-The UI has two tabs:
+- Uses WorkOS sign-in for authenticated access.
+- Creates one local household per user unless they join someone else's household by invite.
+- Shares meals, ingredients, leftovers, grocery lists, and meal logs within a household.
+- Keeps meal preference scores per user so household members can get different dashboard suggestions.
+- Lets household owners copy and refresh invite links, remove members, and choose whether meal templates can appear in Discover.
+- Lets users browse opted-in Discover meals from other households and copy selected templates into their own household.
 
-- `Meals`: build and manage your meal library.
-- `Log`: track cooked meals and see what is near expiration.
+## Main Areas
 
-Core workflows:
-
-- Create, edit, and delete meals.
-- Add ingredient lines to each meal with quantity and unit.
-- Create new ingredients on the fly from the meal form.
-- Log a meal as cooked (with date and optional protein).
-- Review cooked meals sorted by urgency (closest to expiring first).
-
-## Expiration Logic
-
-Cooked meal freshness is calculated from `cookedAt` plus a protein-specific number of days:
-
-- `CHICKEN_BREAST`: 4 days
-- `CHICKEN_THIGHS`: 4 days
-- `ROTISSERIE_CHICKEN`: 4 days
-- `GROUND_BEEF`: 5 days
-- `PORK_BUTT`: 5 days
-- `FISH`: 3 days
-- `EGGS`: 7 days
-- No protein selected: 7 days default
-
-Status labels:
-
-- `fresh`: more than 1 day left
-- `expiring-soon`: 1 day or less left
-- `expired`: 0 or fewer days left
+- `Today`: deterministic meal suggestions from saved meals, preferences, cooked history, leftovers, recipe links, and ingredient counts.
+- `Meals`: create, edit, delete, filter, cook, and copy meals into grocery lists.
+- `Leftovers`: log cooked meals and track freshness.
+- `Grocery`: create saved grocery lists from meals, edit items, check items off, and manage the ingredient catalog.
+- `Discover`: copy meal templates from households that opted in to sharing.
+- `Household`: manage invite links, members, leave/copy flows, and Discover sharing.
 
 ## Tech Stack
 
-- Next.js `16` (App Router)
+- Next.js `16` App Router
 - React `19`
 - TypeScript
-- Prisma ORM `7`
+- Prisma `7`
 - PostgreSQL via `@prisma/adapter-pg`
+- WorkOS AuthKit
 - Tailwind CSS `4`
 
-## Data Model (Prisma)
+## Environment Variables
 
-Main models:
+Create a `.env` file in the project root for local development:
 
-- `Meal`: saved meal template
-- `Ingredient`: reusable ingredient catalog
-- `MealIngredient`: join table with `quantity` and `unit`
-- `MealLog`: cooked meal log entries
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/meal_assistant?schema=public"
+WORKOS_API_KEY="sk_test_..."
+WORKOS_CLIENT_ID="client_..."
+WORKOS_COOKIE_PASSWORD="at-least-32-characters"
+NEXT_PUBLIC_WORKOS_REDIRECT_URI="http://localhost:3000/callback"
+```
 
-Enums used in the app:
+For production, use production WorkOS credentials and set:
 
-- `Protein`
-- `Category`
-- `IngredientCategory`
+```bash
+NEXT_PUBLIC_WORKOS_REDIRECT_URI="https://YOUR_DOMAIN/callback"
+```
 
-Schema lives at `prisma/schema.prisma`.
+Also configure the same production callback URL in the WorkOS Dashboard.
 
-## API Routes
+## WorkOS Setup
 
-- `GET /api/ingredients`: list ingredients (sorted by name)
-- `POST /api/ingredients`: create ingredient (`name`, `category`) or return existing one by name
+Local development:
+
+- Redirect URI: `http://localhost:3000/callback`
+- Sign-in endpoint: `http://localhost:3000/login`
+- Sign-out redirect: `http://localhost:3000`
+
+Production:
+
+- Redirect URI: `https://YOUR_DOMAIN/callback`
+- Sign-in endpoint: `https://YOUR_DOMAIN/login`
+- Sign-out redirect: `https://YOUR_DOMAIN`
+- Use production WorkOS API key and client ID.
+- Use a production-only `WORKOS_COOKIE_PASSWORD`; do not reuse a short or checked-in value.
 
 ## Local Development
 
-### 1. Prerequisites
-
-- Node.js 20+
-- PostgreSQL instance
-
-### 2. Install dependencies
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### 3. Configure environment
-
-Create a `.env` file in the project root:
+Generate Prisma client and apply migrations:
 
 ```bash
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/meal_planner?schema=public"
+npm run prisma -- generate
+npm run prisma -- migrate deploy
 ```
 
-### 4. Generate Prisma client and apply migrations
-
-```bash
-npx prisma generate
-npx prisma migrate deploy
-```
-
-For iterative local schema changes, use:
-
-```bash
-npx prisma migrate dev
-```
-
-### 5. Run the app
+Run the app:
 
 ```bash
 npm run dev
@@ -117,15 +91,13 @@ Open `http://localhost:3000`.
 
 ## Available Scripts
 
-- `npm run dev`: start development server
-- `npm run build`: run `prisma generate`, run migrations (`prisma migrate deploy`), then build Next.js
-- `npm run start`: start production server
-- `npm run lint`: lint project with ESLint
-- `npm run prisma`: run Prisma CLI
+- `npm run dev`: start the development server.
+- `npm run build`: generate Prisma client, deploy migrations, and build Next.js.
+- `npm run start`: start the production server.
+- `npm run lint`: run ESLint.
+- `npm run prisma`: run the Prisma CLI.
 
-## Notable Behavior
+## Documentation
 
-- Meals are ordered by `preference desc`, then `createdAt desc`.
-- Meal logs are fetched by `cookedAt desc`, then reordered in the UI by days left so urgent items appear first.
-- Protein filtering includes meals with no protein set.
-- Search is debounced on the client before refreshing results.
+- `PROJECT_STRUCTURE.md`: orientation guide for agents working in the repository.
+- `USER_HOUSEHOLD_AUTH_PLAN.html`: migration plan and running implementation notes for users, households, WorkOS, default ingredients, invites, and Discover.

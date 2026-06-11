@@ -21,8 +21,9 @@ const INGREDIENT_CATEGORIES: IngredientCategory[] = [
     'PRODUCE',
 ]
 
-export async function IngredientEditTab() {
+export async function IngredientEditTab({ householdId }: { householdId: number }) {
     const ingredients = await prisma.ingredient.findMany({
+        where: { householdId },
         orderBy: [{ category: 'asc' }, { name: 'asc' }],
     })
 

@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { getAuthenticatedActionContext } from '@/lib/auth'
 import { IngredientCategory } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
@@ -46,9 +47,18 @@ function parseMealIds(formData: FormData): number[] {
 }
 
 export async function createGroceryList(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const nameInput = String(formData.get('name') || '').trim()
     const notesInput = String(formData.get('notes') || '').trim()
-    const mealIds = parseMealIds(formData)
+    const requestedMealIds = parseMealIds(formData)
+    const mealIds = requestedMealIds.length > 0
+        ? (
+            await prisma.meal.findMany({
+                where: { id: { in: requestedMealIds }, householdId: household.id },
+                select: { id: true },
+            })
+        ).map((meal) => meal.id)
+        : []
 
     if (mealIds.length > 0) {
         const mealIngredients = await prisma.mealIngredient.findMany({
@@ -92,6 +102,7 @@ export async function createGroceryList(formData: FormData) {
 
         await prisma.groceryList.create({
             data: {
+                householdId: household.id,
                 name: listName,
                 notes: notesInput || null,
                 sourceMeals: {
@@ -118,6 +129,7 @@ export async function createGroceryList(formData: FormData) {
 
     await prisma.groceryList.create({
         data: {
+            householdId: household.id,
             name,
             notes: notesInput || null,
         },
@@ -137,6 +149,7 @@ export async function generateGroceryListFromMeals(formData: FormData) {
 }
 
 export async function toggleGroceryItemChecked(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const groceryItemId = parseIntValue(formData.get('groceryItemId'))
     const isChecked = String(formData.get('isChecked')) === 'true'
 
@@ -144,17 +157,26 @@ export async function toggleGroceryItemChecked(formData: FormData) {
         return
     }
 
-    const updated = await prisma.groceryListItem.update({
-        where: { id: groceryItemId },
-        data: { isChecked },
-        select: { groceryListId: true },
+    const existingItem = await prisma.groceryListItem.findFirst({
+        where: { id: groceryItemId, groceryList: { householdId: household.id } },
+        select: { id: true, groceryListId: true },
     })
 
-    await touchGroceryList(updated.groceryListId)
+    if (!existingItem) {
+        return
+    }
+
+    await prisma.groceryListItem.update({
+        where: { id: existingItem.id },
+        data: { isChecked },
+    })
+
+    await touchGroceryList(existingItem.groceryListId)
     revalidatePath('/')
 }
 
 export async function updateGroceryItem(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const groceryItemId = parseIntValue(formData.get('groceryItemId'))
     const name = String(formData.get('name') || '').trim()
     const quantity = parseQuantity(formData.get('quantity'))
@@ -166,8 +188,17 @@ export async function updateGroceryItem(formData: FormData) {
         return
     }
 
-    const updated = await prisma.groceryListItem.update({
-        where: { id: groceryItemId },
+    const existingItem = await prisma.groceryListItem.findFirst({
+        where: { id: groceryItemId, groceryList: { householdId: household.id } },
+        select: { id: true, groceryListId: true },
+    })
+
+    if (!existingItem) {
+        return
+    }
+
+    await prisma.groceryListItem.update({
+        where: { id: existingItem.id },
         data: {
             nameSnapshot: name,
             quantity,
@@ -175,14 +206,14 @@ export async function updateGroceryItem(formData: FormData) {
             note: noteInput || null,
             category,
         },
-        select: { groceryListId: true },
     })
 
-    await touchGroceryList(updated.groceryListId)
+    await touchGroceryList(existingItem.groceryListId)
     revalidatePath('/')
 }
 
 export async function addManualGroceryItem(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const groceryListId = parseIntValue(formData.get('groceryListId'))
     const name = String(formData.get('name') || '').trim()
     const quantity = parseQuantity(formData.get('quantity'))
@@ -191,6 +222,15 @@ export async function addManualGroceryItem(formData: FormData) {
     const category = parseCategory(formData.get('category'))
 
     if (!groceryListId || !name) {
+        return
+    }
+
+    const groceryList = await prisma.groceryList.findFirst({
+        where: { id: groceryListId, householdId: household.id },
+        select: { id: true },
+    })
+
+    if (!groceryList) {
         return
     }
 
@@ -219,36 +259,47 @@ export async function addManualGroceryItem(formData: FormData) {
 }
 
 export async function deleteGroceryItem(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const groceryItemId = parseIntValue(formData.get('groceryItemId'))
 
     if (!groceryItemId) {
         return
     }
 
-    const deleted = await prisma.groceryListItem.delete({
-        where: { id: groceryItemId },
+    const existingItem = await prisma.groceryListItem.findFirst({
+        where: { id: groceryItemId, groceryList: { householdId: household.id } },
         select: { groceryListId: true },
     })
 
-    await touchGroceryList(deleted.groceryListId)
+    if (!existingItem) {
+        return
+    }
+
+    await prisma.groceryListItem.delete({
+        where: { id: groceryItemId },
+    })
+
+    await touchGroceryList(existingItem.groceryListId)
     revalidatePath('/')
 }
 
 export async function deleteGroceryList(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const groceryListId = parseIntValue(formData.get('groceryListId'))
 
     if (!groceryListId) {
         return
     }
 
-    await prisma.groceryList.delete({
-        where: { id: groceryListId },
+    await prisma.groceryList.deleteMany({
+        where: { id: groceryListId, householdId: household.id },
     })
 
     revalidatePath('/')
 }
 
 export async function addMealToGroceryList(formData: FormData) {
+    const { household } = await getAuthenticatedActionContext()
     const groceryListId = parseIntValue(formData.get('groceryListId'))
     const mealId = parseIntValue(formData.get('mealId'))
 
@@ -256,8 +307,17 @@ export async function addMealToGroceryList(formData: FormData) {
         return
     }
 
+    const groceryList = await prisma.groceryList.findFirst({
+        where: { id: groceryListId, householdId: household.id },
+        select: { id: true },
+    })
+
+    if (!groceryList) {
+        return
+    }
+
     const mealIngredients = await prisma.mealIngredient.findMany({
-        where: { mealId },
+        where: { mealId, meal: { householdId: household.id } },
         include: {
             ingredient: true,
         },

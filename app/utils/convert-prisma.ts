@@ -1,12 +1,28 @@
-import type { Meal, MealIngredient, Ingredient } from '@prisma/client'
+import type { Meal, MealIngredient, Ingredient, MealPreference } from '@prisma/client'
 
-type MealWithIngredients = Meal & {
+type MealWithoutPreference = Meal
+
+type MealWithIngredients = MealWithoutPreference & {
     ingredients: Array<MealIngredient & { ingredient: Ingredient }>
+    preferences?: Array<Pick<MealPreference, 'score'>>
 }
 
-export type SerializedMealWithIngredients = Meal & {
+export type SerializedMealWithIngredients = MealWithoutPreference & {
+    preference: number | null
     ingredients: Array<Omit<MealIngredient, 'quantity'> & { quantity: number; ingredient: Ingredient }>
     lastCookedAt: string | null
+    cookedCount: number
+    daysSinceCooked: number | null
+}
+
+export type MealCookedStats = {
+    lastCookedAt: Date | null
+    cookedCount: number
+}
+
+function getDaysSince(date: Date): number {
+    const now = new Date()
+    return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 /**
@@ -15,14 +31,23 @@ export type SerializedMealWithIngredients = Meal & {
  */
 export function serializeMeals(
     meals: MealWithIngredients[],
-    lastCookedAtByMealId: Map<number, Date> = new Map()
+    cookedStatsByMealId: Map<number, MealCookedStats> = new Map()
 ): SerializedMealWithIngredients[] {
-    return meals.map(meal => ({
-        ...meal,
-        ingredients: meal.ingredients.map(ing => ({
-            ...ing,
-            quantity: typeof ing.quantity === 'number' ? ing.quantity : ing.quantity.toNumber(),
-        })),
-        lastCookedAt: lastCookedAtByMealId.get(meal.id)?.toISOString() ?? null,
-    }))
+    return meals.map(meal => {
+        const cookedStats = cookedStatsByMealId.get(meal.id)
+        const lastCookedAt = cookedStats?.lastCookedAt ?? null
+
+        return {
+            ...meal,
+            preference: meal.preferences?.[0]?.score ?? null,
+            preferences: undefined,
+            ingredients: meal.ingredients.map(ing => ({
+                ...ing,
+                quantity: typeof ing.quantity === 'number' ? ing.quantity : ing.quantity.toNumber(),
+            })),
+            lastCookedAt: lastCookedAt?.toISOString() ?? null,
+            cookedCount: cookedStats?.cookedCount ?? 0,
+            daysSinceCooked: lastCookedAt ? getDaysSince(lastCookedAt) : null,
+        }
+    })
 }

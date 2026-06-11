@@ -83,10 +83,7 @@ export function IngredientInput({ onIngredientsChange, initialIngredients = [] }
         setIngredients([
             ...ingredients,
             {
-                id: ingredient.id,
-                name: ingredient.name,
-                category: ingredient.category,
-                createdAt: ingredient.createdAt,
+                ...ingredient,
                 quantity: parseFloat(newQuantity),
                 unit: newUnit,
             }

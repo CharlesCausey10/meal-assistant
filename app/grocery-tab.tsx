@@ -40,13 +40,18 @@ function isPositiveInt(value: string | undefined): boolean {
 
 export async function GroceryTab({
     searchParams,
+    householdId,
+    userId,
 }: {
     searchParams: Promise<SearchParams>
+    householdId: number
+    userId: number
 }) {
     const params = await searchParams
 
     const [groceryLists, allMeals] = await Promise.all([
         prisma.groceryList.findMany({
+            where: { householdId },
             include: {
                 sourceMeals: {
                     include: {
@@ -65,19 +70,30 @@ export async function GroceryTab({
             orderBy: { createdAt: 'desc' },
         }),
         prisma.meal.findMany({
+            where: { householdId },
             select: {
                 id: true,
                 name: true,
                 category: true,
-                preference: true,
                 ingredients: true,
+                preferences: {
+                    where: { userId },
+                    select: { score: true },
+                },
             },
-            orderBy: [{ preference: 'desc' }, { createdAt: 'desc' }],
+            orderBy: { createdAt: 'desc' },
         }),
     ])
 
     // Filter out meals that don't have any ingredients
-    const meals = allMeals.filter((meal) => meal.ingredients.length > 0)
+    const meals = allMeals
+        .filter((meal) => meal.ingredients.length > 0)
+        .sort((a, b) => {
+            const preferenceDiff = (b.preferences[0]?.score ?? -1) - (a.preferences[0]?.score ?? -1)
+            if (preferenceDiff !== 0) return preferenceDiff
+
+            return b.id - a.id
+        })
 
     const selectedListId = isPositiveInt(params.listId) ? parseInt(params.listId!, 10) : null
     const selectedList =
