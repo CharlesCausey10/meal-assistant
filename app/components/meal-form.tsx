@@ -4,6 +4,7 @@ import { createMeal } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { PreferenceInput } from './preference-input'
 import { IngredientInput } from './ingredient-input'
+import { CategoryCheckboxGroup } from './category-checkbox-group'
 import { FormEvent, useState } from 'react'
 
 interface IngredientWithQuantity {
@@ -21,6 +22,7 @@ interface MealFormProps {
 export function MealForm({ onSuccess }: MealFormProps) {
     const router = useRouter()
     const [ingredients, setIngredients] = useState<IngredientWithQuantity[]>([])
+    const [resetKey, setResetKey] = useState(0)
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -37,13 +39,14 @@ export function MealForm({ onSuccess }: MealFormProps) {
         // Reset form
         form.reset()
         setIngredients([])
+        setResetKey((value) => value + 1)
     }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-3">
             <input name="name" placeholder="Meal name" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle" required />
             <input name="recipeUrl" placeholder="Recipe URL (optional)" type="url" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select name="protein" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text">
                     <option value="">Protein (optional)</option>
                     <option value="CHICKEN_BREAST">🐔 Chicken Breast</option>
@@ -54,17 +57,9 @@ export function MealForm({ onSuccess }: MealFormProps) {
                     <option value="FISH">🐟 Fish</option>
                     <option value="EGGS">🥚 Eggs</option>
                 </select>
-                <select name="category" className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text" required defaultValue="">
-                    <option value="" disabled>Select category</option>
-                    <option value="BREAKFAST">Breakfast</option>
-                    <option value="LUNCH">Lunch</option>
-                    <option value="DINNER">Dinner</option>
-                    <option value="SIDE_STARTER">Side/Starter</option>
-                    <option value="SNACK">Snack</option>
-                    <option value="DESSERT">Dessert</option>
-                </select>
                 <PreferenceInput padSize="md" />
             </div>
+            <CategoryCheckboxGroup key={resetKey} />
             <IngredientInput onIngredientsChange={setIngredients} />
             <button type="submit" className="bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast px-6 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-primary/20 w-full">
                 Add Meal

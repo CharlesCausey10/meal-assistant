@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getDaysUntilExpiration, getExpirationStatus } from './utils/expiration'
 import { formatLabel } from './utils/format'
 import { serializeMeals, type SerializedMealWithIngredients } from './utils/convert-prisma'
+import { getMealCategoriesForDisplay, hasMealCategory } from './utils/categories'
 
 type MealStats = {
     lastCookedAt: Date | null
@@ -88,14 +89,16 @@ function interleaveMealGroups(
     meals: SerializedMealWithIngredients[],
     categories: Category[]
 ): SerializedMealWithIngredients[] {
-    const mealGroups = categories.map((category) => meals.filter((meal) => meal.category === category))
+    const seenMealIds = new Set<number>()
+    const mealGroups = categories.map((category) => meals.filter((meal) => hasMealCategory(meal, category)))
     const interleavedMeals: SerializedMealWithIngredients[] = []
     const maxGroupLength = Math.max(...mealGroups.map((group) => group.length))
 
     for (let index = 0; index < maxGroupLength; index += 1) {
         for (const group of mealGroups) {
             const meal = group[index]
-            if (meal) {
+            if (meal && !seenMealIds.has(meal.id)) {
+                seenMealIds.add(meal.id)
                 interleavedMeals.push(meal)
             }
         }
@@ -120,17 +123,13 @@ function preferenceChip(meal: SerializedMealWithIngredients): string {
     return meal.preference === null ? 'No score' : `${meal.preference}/10`
 }
 
-function recipeChip(meal: SerializedMealWithIngredients): string {
-    return meal.recipeUrl ? 'Has recipe' : 'No recipe URL'
-}
-
 function ingredientsChip(meal: SerializedMealWithIngredients): string {
     const count = meal.ingredients.length
     return count === 1 ? '1 ingredient' : `${count} ingredients`
 }
 
 function getMealReason(meal: SerializedMealWithIngredients): string {
-    const category = formatLabel(meal.category)
+    const category = getMealCategoriesForDisplay(meal).map(formatLabel).join(' / ')
     const cookedText =
         meal.cookedCount > 0
             ? `cooked ${meal.cookedCount} time${meal.cookedCount === 1 ? '' : 's'}`
@@ -178,9 +177,11 @@ function MealRail({
                                     {formatDaysSince(meal.daysSinceCooked)}
                                 </span>
                             ) : null}
-                            <span className="rounded-full bg-app-surface-soft px-2 py-1 text-xs font-semibold text-app-muted">
-                                {ingredientsChip(meal)}
-                            </span>
+                            {meal.ingredients.length > 0 ? (
+                                <span className="rounded-full bg-app-surface-soft px-2 py-1 text-xs font-semibold text-app-muted">
+                                    {ingredientsChip(meal)}
+                                </span>
+                            ) : null}
                             {meal.recipeUrl ? (
                                 <span className="rounded-full bg-info/15 px-2 py-1 text-xs font-semibold text-info">
                                     Has recipe
@@ -280,6 +281,10 @@ export async function DashboardTab({
                     where: { userId },
                     select: { score: true },
                 },
+                categories: {
+                    select: { category: true },
+                    orderBy: { id: 'asc' },
+                },
             },
             orderBy: { createdAt: 'desc' },
         }),
@@ -310,9 +315,9 @@ export async function DashboardTab({
     const mealWindow = getMealWindow(new Date())
     const statsByMealId = buildStatsByMealId(cookedLogs)
     const dashboardMeals = serializeMeals(meals, statsByMealId)
-        .filter((meal) => meal.category !== Category.DESSERT)
+        .filter((meal) => !hasMealCategory(meal, Category.DESSERT))
     const rankedMealWindowIdeas = dashboardMeals
-        .filter((meal) => mealWindow.categories.includes(meal.category))
+        .filter((meal) => mealWindow.categories.some((category) => hasMealCategory(meal, category)))
         .sort(rankMeals)
     const topMealIdeas = (mealWindow.shouldInterleaveCategories
         ? interleaveMealGroups(rankedMealWindowIdeas, mealWindow.categories)
@@ -325,65 +330,31 @@ export async function DashboardTab({
         .sort(rankMeals)
         .slice(0, 8)
     const snackIdeas = dashboardMeals
-        .filter((meal) => meal.category === Category.SNACK)
+        .filter((meal) => hasMealCategory(meal, Category.SNACK))
         .sort(rankMeals)
         .slice(0, 8)
-    const primaryMeal = topMealIdeas[0] ?? dashboardMeals.sort(rankMeals)[0] ?? null
-
     return (
         <div className="h-full overflow-y-auto p-3 pb-6 md:p-5">
             <div className="mx-auto flex max-w-5xl flex-col gap-5">
-                <section className="rounded-xl border border-primary/25 bg-app-surface/90 p-4 shadow-sm md:p-5">
-                    <div className="flex items-start justify-between gap-4">
+                <section>
+                    <div className="mb-3 flex items-start justify-between gap-4 px-1">
                         <div>
                             <p className="text-sm font-semibold text-app-muted">Today</p>
                             <h2 className="mt-1 text-2xl font-semibold leading-tight text-app-text">
                                 What sounds good?
                             </h2>
+                            <p className="mt-1 text-sm text-app-muted">
+                                Preference score, meal type, cooked history, recipe URL, and ingredient count.
+                            </p>
                         </div>
                         <span className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary-text">
                             {mealWindow.label}
                         </span>
                     </div>
-
-                    {primaryMeal ? (
-                        <div className="mt-4 rounded-xl bg-primary text-primary-contrast p-4">
-                            <p className="text-sm font-semibold opacity-90">
-                                Top {mealWindow.label.toLowerCase()} idea
-                            </p>
-                            <h3 className="mt-2 text-2xl font-semibold leading-tight">{primaryMeal.name}</h3>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <span className="rounded-full bg-app-surface/20 px-2.5 py-1 text-xs font-semibold">
-                                    {preferenceChip(primaryMeal)}
-                                </span>
-                                {primaryMeal.daysSinceCooked !== null ? (
-                                    <span className="rounded-full bg-app-surface/20 px-2.5 py-1 text-xs font-semibold">
-                                        {formatDaysSince(primaryMeal.daysSinceCooked)}
-                                    </span>
-                                ) : null}
-                                <span className="rounded-full bg-app-surface/20 px-2.5 py-1 text-xs font-semibold">
-                                    {recipeChip(primaryMeal)}
-                                </span>
-                                <span className="rounded-full bg-app-surface/20 px-2.5 py-1 text-xs font-semibold">
-                                    {ingredientsChip(primaryMeal)}
-                                </span>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="mt-4 rounded-lg bg-app-surface-soft p-4 text-sm text-app-muted">
-                            Add meals to start seeing dashboard ideas.
-                        </p>
-                    )}
-                </section>
-
-                <section>
                     <div className="mb-2 px-1">
-                        <h2 className="text-lg font-semibold text-app-text">
+                        <h3 className="text-lg font-semibold text-app-text">
                             Top {mealWindow.label} Ideas
-                        </h2>
-                        <p className="text-sm text-app-muted">
-                            Preference score, meal type, cooked history, recipe URL, and ingredient count.
-                        </p>
+                        </h3>
                     </div>
                     <MealRail meals={topMealIdeas} emptyText={`No ${mealWindow.label.toLowerCase()} meals yet.`} />
                 </section>

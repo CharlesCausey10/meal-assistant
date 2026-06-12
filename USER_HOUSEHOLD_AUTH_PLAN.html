@@ -346,6 +346,13 @@
         shared between local testing and production, <code>lib/auth.ts</code> now relinks an existing local
         <code>User</code> by email when the WorkOS ID changes instead of failing on the unique email constraint.
       </div>
+      <div class="note">
+        <strong>Meal category tagging applied:</strong> migration
+        <code>20260611140000_add_meal_categories</code> added <code>MealCategory</code>, backfilled every
+        existing meal from its current <code>Meal.category</code>, and updated meal create/edit/filter/dashboard,
+        Discover, grocery, and copy flows to preserve and use multiple meal-window tags. The legacy
+        <code>Meal.category</code> column remains as the primary/backward-compatible category.
+      </div>
     </section>
 
     <section>
@@ -811,15 +818,8 @@ ADD CONSTRAINT meal_preference_score_check CHECK ("score" BETWEEN 1 AND 10);</co
       <h2>Next Steps</h2>
       <ul>
         <li>
-          Add a future meal tagging or multi-category system so one meal can be marked for more than one
-          use case, such as both lunch and dinner. The current production duplicate meal names mostly exist
-          because a meal could only have one <code>Category</code>, so duplicates were used to represent
-          the same meal in multiple meal windows.
-        </li>
-        <li>
-          After that system exists, merge or rename duplicate household meals and then enforce unique meal
-          names within each household. Until then, keep meal-name uniqueness as a planned invariant, but do
-          not block the auth/household migration on implementing tags.
+          Merge or rename duplicate household meals now that one meal can be tagged for multiple meal windows.
+          After duplicates are cleaned up, enforce unique meal names within each household.
         </li>
         <li>
           Improve Discover ranking after more real households exist. The first implementation uses recent meal

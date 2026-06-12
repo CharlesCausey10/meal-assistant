@@ -6,12 +6,14 @@ import { deleteMeal, updateMeal } from './actions'
 import { addMealToGroceryList } from './actions-grocery'
 import { PreferenceInput } from './components/preference-input'
 import { IngredientInput } from './components/ingredient-input'
+import { CategoryCheckboxGroup } from './components/category-checkbox-group'
 import { MealLogForm } from './components/meal-log-form'
 import { ResponsiveModal } from './components/responsive-modal'
 import { CookingAnimation } from './components/cooking-animation'
 import { Toast } from './components/toast'
 import type { Ingredient } from '@prisma/client'
 import type { SerializedMealWithIngredients } from './utils/convert-prisma'
+import { getMealCategoriesForDisplay, getMealCategoryLabel } from './utils/categories'
 
 interface IngredientWithQuantity extends Ingredient {
     quantity: number
@@ -46,11 +48,6 @@ export function MealList({ meals, groceryLists }: MealListProps) {
             'EGGS': '🥚'
         }
         return emojiMap[protein] || ''
-    }
-
-    const formatCategory = (category: string) => {
-        if (category === 'SIDE_STARTER') return 'Side/Starter'
-        return category.charAt(0) + category.slice(1).toLowerCase()
     }
 
     const formatProtein = (protein: string) => {
@@ -111,7 +108,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     type="url"
                                     className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
                                 />
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                     <select
                                         name="protein"
                                         defaultValue={meal.protein || ''}
@@ -126,21 +123,12 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                         <option value="FISH">🐟 Fish</option>
                                         <option value="EGGS">🥚 Eggs</option>
                                     </select>
-                                    <select
-                                        name="category"
-                                        defaultValue={meal.category}
-                                        className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
-                                        required
-                                    >
-                                        <option value="BREAKFAST">Breakfast</option>
-                                        <option value="LUNCH">Lunch</option>
-                                        <option value="DINNER">Dinner</option>
-                                        <option value="SIDE_STARTER">Side/Starter</option>
-                                        <option value="SNACK">Snack</option>
-                                        <option value="DESSERT">Dessert</option>
-                                    </select>
                                     <PreferenceInput defaultValue={meal.preference || ''} padSize="sm" />
                                 </div>
+                                <CategoryCheckboxGroup
+                                    defaultCategories={meal.categories.length > 0 ? meal.categories : [meal.category]}
+                                    compact
+                                />
                                 <IngredientInput
                                     onIngredientsChange={setEditingIngredients}
                                     initialIngredients={meal.ingredients.map(ing => ({
@@ -177,7 +165,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                         <div className="font-semibold text-app-text text-lg">{meal.name}</div>
 
                                         <div className="text-sm text-primary-text">
-                                            {`${meal.protein ? getProteinEmoji(meal.protein) + ' ' : ''}${meal.protein ? formatProtein(meal.protein) + ' • ' : ''}${formatCategory(meal.category)}`}
+                                            {`${meal.protein ? getProteinEmoji(meal.protein) + ' ' : ''}${meal.protein ? formatProtein(meal.protein) + ' / ' : ''}${getMealCategoriesForDisplay(meal).map(getMealCategoryLabel).join(' / ')}`}
 
                                             {meal.preference && (
                                                 <span className="ml-2 text-xs text-app-subtle">

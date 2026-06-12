@@ -95,7 +95,8 @@ Models:
 - `User`: local user profile linked to a WorkOS user ID, with household memberships and per-user meal preferences.
 - `Household`: local household/workspace linked to an optional WorkOS organization ID; owns meals, ingredients, logs, grocery lists, one active app-level invite token, and nullable Discover sharing consent.
 - `HouseholdMember`: join table between users and households with an owner/member role.
-- `Meal`: meal template with optional household ownership. Normal user-facing meals should be household-owned; new households start with no default meals and add meals manually or copy them from Discover.
+- `Meal`: meal template with optional household ownership, a legacy/primary `category`, multi-category `MealCategory` tags, optional protein, notes, recipe URL, ingredients, grocery-list uses, logs, and per-user preferences. Normal user-facing meals should be household-owned; new households start with no default meals and add meals manually or copy them from Discover.
+- `MealCategory`: meal-window tag join table that lets one meal appear in multiple categories such as both lunch and dinner. Existing `Meal.category` is still retained as a primary/backward-compatible category until duplicate meal cleanup and eventual simplification.
 - `MealPreference`: per-user 1-10 preference score for a meal. Existing scores were migrated here from the removed `Meal.preference` column.
 - `Ingredient`: reusable ingredient catalog entry with optional household ownership (`householdId = null` means global default/template), name, and category.
 - `MealIngredient`: join table between meals and ingredients, with `quantity` and `unit`; unique per `(mealId, ingredientId)`.
@@ -138,14 +139,14 @@ These files fetch server data and pass serialized data into client components:
   - Fetches current-household meals with nested meal ingredients and ingredient records.
   - Fetches current-household grocery-list names for the "Add to List" flow.
   - Fetches current-household cooked meal logs linked to meals to compute `lastCookedAt`, `cookedCount`, and `daysSinceCooked`.
-  - Includes the current user's `MealPreference` row and sorts serialized meals by per-user preference, then `createdAt desc`.
+  - Includes the current user's `MealPreference` row and the meal's `MealCategory` tags, then sorts serialized meals by per-user preference and `createdAt desc`.
   - Uses `serializeMeals()` to convert Prisma Decimal quantities and attach cooked stats before crossing into client components.
 
 - `app/dashboard-tab.tsx`
   - Fetches current-household meals with ingredients, meal-linked cooked logs, and active leftovers.
   - Computes `lastCookedAt`, `cookedCount`, and `daysSinceCooked` from `MealLog`.
   - Uses the current time to title the top meal rail as Breakfast (4-10:30), Brunch (10:30-12), Lunch (12-3), Dinner (3-11), or Midnight Snack (11-4).
-  - Brunch interleaves ranked breakfast and lunch meals; the other windows stick to a single category.
+  - Brunch interleaves ranked breakfast and lunch meals; meal-window filtering uses `MealCategory` tags with `Meal.category` as a fallback.
   - Renders horizontal browse rails for Top Ideas, Use Soon, Forgotten Favorites, and Snack Ideas.
   - Excludes dessert meals from dashboard suggestion rails; desserts remain available in the Meals tab.
   - Avoids pantry/readiness claims; chips are limited to deterministic signals such as preference score, last cooked age, cooked count, recipe URL presence, ingredient count, and leftover expiration.
@@ -179,6 +180,7 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
   - `updateMeal(formData)`
   - `deleteMeal(formData)`
   - Parses JSON-encoded ingredients from the meal form and writes nested `MealIngredient` rows.
+  - Parses selected meal-window categories, stores the first as `Meal.category`, and writes all selected windows to `MealCategory`.
 
 - `app/actions-meal-log.ts`
   - `logMeal(formData)`
@@ -253,6 +255,7 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
 - `leave-household-control.tsx`: member-only leave-household modal with pre-checked copy options for meals/ingredients/preferences and meal logs.
 - `responsive-modal.tsx`: responsive modal/drawer-like overlay used for mobile and focused forms.
 - `meal-form.tsx`: create meal form.
+- `category-checkbox-group.tsx`: reusable multi-select meal-window tag control used by create/edit meal forms.
 - `meal-log-form.tsx`: create cooked-meal log form.
 - `meal-selector.tsx`: meal multi-selector used when creating grocery lists.
 - `ingredient-input.tsx`: ingredient autocomplete/entry component used by meal forms.

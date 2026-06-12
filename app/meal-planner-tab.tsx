@@ -26,6 +26,10 @@ export async function MealPlannerTab({
                     where: { userId },
                     select: { score: true },
                 },
+                categories: {
+                    select: { category: true },
+                    orderBy: { id: 'asc' },
+                },
             },
             orderBy: { createdAt: 'desc' },
         }),

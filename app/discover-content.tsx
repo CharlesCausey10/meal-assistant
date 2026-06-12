@@ -10,6 +10,7 @@ export type DiscoverMeal = {
     name: string
     protein: string | null
     category: string
+    categories: string[]
     recipeUrl: string | null
     ingredients: Array<{
         id: number
@@ -185,7 +186,9 @@ export function DiscoverContent({
                                     <h3 className="text-lg font-semibold text-app-text">{meal.name}</h3>
                                     <p className="mt-1 text-sm text-primary-text">
                                         {meal.protein ? `${formatLabel(meal.protein)} / ` : ''}
-                                        {formatLabel(meal.category)}
+                                        {(meal.categories.length > 0 ? meal.categories : [meal.category])
+                                            .map(formatLabel)
+                                            .join(' / ')}
                                     </p>
                                 </div>
 

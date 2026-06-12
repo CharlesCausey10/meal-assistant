@@ -7,6 +7,7 @@ import { Filters } from './filters'
 import { MealList } from './meal-list'
 import { MealForm } from './components/meal-form'
 import { ResponsiveModal } from './components/responsive-modal'
+import { hasMealCategory } from './utils/categories'
 
 const NO_PROTEIN_FILTER = 'NO_PROTEIN'
 
@@ -106,12 +107,12 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
     )
 
     const isCategoryMatch = useCallback(
-        (category: string) => {
+        (meal: SerializedMealWithIngredients) => {
             if (selectedCategories.length === 0) {
                 return true
             }
 
-            return selectedCategories.includes(category)
+            return selectedCategories.some((category) => hasMealCategory(meal, category))
         },
         [selectedCategories]
     )
@@ -123,7 +124,7 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
                 normalizedSearch.length === 0 ||
                 meal.name.toLowerCase().includes(normalizedSearch)
 
-            return isSearchMatch && isProteinMatch(meal.protein) && isCategoryMatch(meal.category)
+            return isSearchMatch && isProteinMatch(meal.protein) && isCategoryMatch(meal)
         })
     }, [meals, searchValue, isProteinMatch, isCategoryMatch])
 

@@ -29,6 +29,10 @@ export async function DiscoverTab({
                     },
                     orderBy: { id: 'asc' },
                 },
+                categories: {
+                    select: { category: true },
+                    orderBy: { id: 'asc' },
+                },
             },
             orderBy: [
                 { updatedAt: 'desc' },
@@ -54,6 +58,7 @@ export async function DiscoverTab({
             name: meal.name,
             protein: meal.protein,
             category: meal.category,
+            categories: meal.categories.map((category) => category.category),
             recipeUrl: meal.recipeUrl,
             ingredients: meal.ingredients.map((mealIngredient) => ({
                 id: mealIngredient.id,

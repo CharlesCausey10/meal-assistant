@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { GroceryListWrapper } from './components/grocery-list-wrapper'
 import { formatLabel } from './utils/format'
 import type { IngredientCategory } from '@prisma/client'
+import { getMealCategoriesForDisplay } from './utils/categories'
 
 type SearchParams = {
     protein?: string
@@ -75,6 +76,10 @@ export async function GroceryTab({
                 id: true,
                 name: true,
                 category: true,
+                categories: {
+                    select: { category: true },
+                    orderBy: { id: 'asc' },
+                },
                 ingredients: true,
                 preferences: {
                     where: { userId },
@@ -120,7 +125,10 @@ export async function GroceryTab({
     const mealOptions = meals.map((meal) => ({
         id: meal.id,
         name: meal.name,
-        categoryLabel: formatLabel(meal.category),
+        categoryLabel: getMealCategoriesForDisplay({
+            category: meal.category,
+            categories: meal.categories.map((category) => category.category),
+        }).map(formatLabel).join(' / '),
     }))
 
     // Map to only the fields needed by the sidebar to avoid passing Decimal objects

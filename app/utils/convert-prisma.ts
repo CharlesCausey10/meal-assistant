@@ -1,14 +1,16 @@
-import type { Meal, MealIngredient, Ingredient, MealPreference } from '@prisma/client'
+import type { Meal, MealIngredient, Ingredient, MealPreference, MealCategory } from '@prisma/client'
 
 type MealWithoutPreference = Meal
 
 type MealWithIngredients = MealWithoutPreference & {
     ingredients: Array<MealIngredient & { ingredient: Ingredient }>
     preferences?: Array<Pick<MealPreference, 'score'>>
+    categories?: Array<Pick<MealCategory, 'category'>>
 }
 
 export type SerializedMealWithIngredients = MealWithoutPreference & {
     preference: number | null
+    categories: string[]
     ingredients: Array<Omit<MealIngredient, 'quantity'> & { quantity: number; ingredient: Ingredient }>
     lastCookedAt: string | null
     cookedCount: number
@@ -41,6 +43,7 @@ export function serializeMeals(
             ...meal,
             preference: meal.preferences?.[0]?.score ?? null,
             preferences: undefined,
+            categories: meal.categories?.map((category) => category.category) ?? [meal.category],
             ingredients: meal.ingredients.map(ing => ({
                 ...ing,
                 quantity: typeof ing.quantity === 'number' ? ing.quantity : ing.quantity.toNumber(),

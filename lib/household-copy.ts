@@ -50,6 +50,10 @@ export async function copyMealsAndIngredientsToHousehold(
                 ingredients: {
                     include: { ingredient: true },
                 },
+                categories: {
+                    select: { category: true },
+                    orderBy: { id: 'asc' },
+                },
                 preferences: {
                     where: { userId },
                 },
@@ -127,6 +131,12 @@ export async function copyMealsAndIngredientsToHousehold(
                 name: meal.name,
                 protein: meal.protein,
                 category: meal.category,
+                categories: {
+                    create: (meal.categories.length > 0
+                        ? meal.categories.map((mealCategory) => mealCategory.category)
+                        : [meal.category]
+                    ).map((category) => ({ category })),
+                },
                 notes: meal.notes,
                 recipeUrl: meal.recipeUrl,
             },

@@ -2,8 +2,9 @@
 
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedActionContext } from '@/lib/auth'
-import { Protein, Category } from '@prisma/client'
+import { Protein } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { normalizeMealCategories } from './utils/categories'
 
 function parsePreference(value: string): number | null {
     if (!value) return null
@@ -16,14 +17,15 @@ export async function createMeal(formData: FormData) {
     const { household, user } = await getAuthenticatedActionContext()
     const name = formData.get('name') as string
     const proteinValue = formData.get('protein') as string
-    const category = formData.get('category') as Category
+    const categories = normalizeMealCategories(formData.getAll('categories'))
     const preferenceValue = formData.get('preference') as string
     const recipeUrl = formData.get('recipeUrl') as string
     const ingredientsJson = formData.get('ingredients') as string
 
-    if (!name || !category) return
+    if (!name || categories.length === 0) return
 
     const preference = parsePreference(preferenceValue)
+    const primaryCategory = categories[0]
     
     let ingredients: Array<{
         id: number
@@ -46,8 +48,11 @@ export async function createMeal(formData: FormData) {
             householdId: household.id,
             name,
             protein: proteinValue ? (proteinValue as Protein) : null,
-            category,
+            category: primaryCategory,
             recipeUrl: recipeUrl || null,
+            categories: {
+                create: categories.map((category) => ({ category })),
+            },
             ingredients: {
                 create: ingredients.map(ing => ({
                     ingredientId: ing.id,
@@ -101,14 +106,15 @@ export async function updateMeal(formData: FormData) {
     const id = formData.get('id') as string
     const name = formData.get('name') as string
     const proteinValue = formData.get('protein') as string
-    const category = formData.get('category') as Category
+    const categories = normalizeMealCategories(formData.getAll('categories'))
     const preferenceValue = formData.get('preference') as string
     const recipeUrl = formData.get('recipeUrl') as string
     const ingredientsJson = formData.get('ingredients') as string
 
-    if (!id || !name || !category) return
+    if (!id || !name || categories.length === 0) return
 
     const preference = parsePreference(preferenceValue)
+    const primaryCategory = categories[0]
     const mealId = parseInt(id)
     const meal = await prisma.meal.findFirst({
         where: { id: mealId, householdId: household.id },
@@ -139,8 +145,12 @@ export async function updateMeal(formData: FormData) {
             data: {
                 name,
                 protein: proteinValue ? (proteinValue as Protein) : null,
-                category,
+                category: primaryCategory,
                 recipeUrl: recipeUrl || null,
+                categories: {
+                    deleteMany: {},
+                    create: categories.map((category) => ({ category })),
+                },
                 ingredients: {
                     deleteMany: {},
                     create: ingredients.map(ing => ({
