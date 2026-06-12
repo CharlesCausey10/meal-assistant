@@ -63,14 +63,14 @@ export function GroceryListContent({
     const [optimisticCheckedById, setOptimisticCheckedById] = useState<Record<number, boolean>>({})
     const hasLoadedRef = useRef(false)
     const isMountedRef = useRef(false)
-    
+
     // Ingredient autocomplete state
     const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([])
     const [itemNameInput, setItemNameInput] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<IngredientCategory>('OTHER')
     const [showDropdown, setShowDropdown] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
-    
+
     // Desktop form state
     const [desktopItemNameInput, setDesktopItemNameInput] = useState('')
     const [desktopSelectedCategory, setDesktopSelectedCategory] = useState<IngredientCategory>('OTHER')
@@ -107,7 +107,7 @@ export function GroceryListContent({
             .then(data => setAvailableIngredients(data))
             .catch(err => console.error('Failed to fetch ingredients:', err))
     }, [])
-    
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -133,29 +133,29 @@ export function GroceryListContent({
             }
         }
     }, [hideChecked, hideAmounts])
-    
+
     // Filter ingredients based on search input
     const filteredIngredients = availableIngredients.filter(ing =>
         ing.name.toLowerCase().includes(itemNameInput.toLowerCase())
     ).slice(0, 5)
-    
+
     const desktopFilteredIngredients = availableIngredients.filter(ing =>
         ing.name.toLowerCase().includes(desktopItemNameInput.toLowerCase())
     ).slice(0, 5)
-    
+
     // Handle selecting an ingredient from dropdown
     const handleSelectIngredient = (ingredient: Ingredient) => {
         setItemNameInput(ingredient.name)
         setSelectedCategory(ingredient.category)
         setShowDropdown(false)
     }
-    
+
     const handleSelectDesktopIngredient = (ingredient: Ingredient) => {
         setDesktopItemNameInput(ingredient.name)
         setDesktopSelectedCategory(ingredient.category)
         setShowDesktopDropdown(false)
     }
-    
+
     // Reset form when modal closes
     const handleCloseModal = () => {
         setIsAddItemModalOpen(false)
@@ -221,7 +221,7 @@ export function GroceryListContent({
         for (const [group, items] of groupedEntries) {
             // Add category header
             lines.push(formatLabel(group))
-            
+
             // Group items by ingredient
             const ingredientEntryMap = new Map<
                 string,
@@ -269,7 +269,7 @@ export function GroceryListContent({
 
         // Join with newlines and copy to clipboard
         const text = lines.join('\n')
-        
+
         try {
             await navigator.clipboard.writeText(text)
             setIsMenuOpen(false)
@@ -661,173 +661,171 @@ export function GroceryListContent({
                 {/* Scrollable items section */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="space-y-3.5">
-                    {groupedEntries.length === 0 ? (
-                        <div className="text-center text-app-subtle py-8 bg-app-surface-soft/60 border border-app-border rounded-xl">
-                            No grocery items yet.
-                        </div>
-                    ) : (
-                        groupedEntries.map(([group, items]) => {
-                            const ingredientEntryMap = new Map<
-                                string,
-                                {
-                                    key: string
-                                    items: typeof items
+                        {groupedEntries.length === 0 ? (
+                            <div className="text-center text-app-subtle py-8 bg-app-surface-soft/60 border border-app-border rounded-xl">
+                                No grocery items yet.
+                            </div>
+                        ) : (
+                            groupedEntries.map(([group, items]) => {
+                                const ingredientEntryMap = new Map<
+                                    string,
+                                    {
+                                        key: string
+                                        items: typeof items
+                                    }
+                                >()
+
+                                for (const item of items) {
+                                    const key =
+                                        item.ingredientId !== null
+                                            ? `ingredient:${item.ingredientId}`
+                                            : `item:${item.id}`
+
+                                    if (!ingredientEntryMap.has(key)) {
+                                        ingredientEntryMap.set(key, {
+                                            key,
+                                            items: [item],
+                                        })
+                                    } else {
+                                        ingredientEntryMap.get(key)!.items.push(item)
+                                    }
                                 }
-                            >()
 
-                            for (const item of items) {
-                                const key =
-                                    item.ingredientId !== null
-                                        ? `ingredient:${item.ingredientId}`
-                                        : `item:${item.id}`
+                                const ingredientEntries = Array.from(ingredientEntryMap.values())
 
-                                if (!ingredientEntryMap.has(key)) {
-                                    ingredientEntryMap.set(key, {
-                                        key,
-                                        items: [item],
-                                    })
-                                } else {
-                                    ingredientEntryMap.get(key)!.items.push(item)
-                                }
-                            }
+                                return (
+                                    <section
+                                        key={group}
+                                        className="space-y-1.5"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm uppercase tracking-wide text-primary-text font-semibold">
+                                                {formatLabel(group)}
+                                            </h3>
+                                            {uncheckedCountByCategory(items) === 0 ? (
+                                                <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                </svg>
+                                            ) : (
+                                                <span className="text-xs font-medium text-app-subtle bg-app-surface/80 px-2 py-0.5 rounded">
+                                                    {uncheckedCountByCategory(items)} left
+                                                </span>
+                                            )}
+                                        </div>
+                                        <ul className="space-y-1.5">
+                                            {ingredientEntries.map((entry) => {
+                                                if (entry.items.length === 1) {
+                                                    const item = entry.items[0]
+                                                    const itemWithOptimisticChecked = {
+                                                        ...item,
+                                                        isChecked: getEffectiveChecked(item),
+                                                    }
 
-                            const ingredientEntries = Array.from(ingredientEntryMap.values())
-
-                            return (
-                                <section
-                                    key={group}
-                                    className="space-y-1.5"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-sm uppercase tracking-wide text-primary-text font-semibold">
-                                            {formatLabel(group)}
-                                        </h3>
-                                        {uncheckedCountByCategory(items) === 0 ? (
-                                            <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                        ) : (
-                                            <span className="text-xs font-medium text-app-subtle bg-app-surface/80 px-2 py-0.5 rounded">
-                                                {uncheckedCountByCategory(items)} left
-                                            </span>
-                                        )}
-                                    </div>
-                                    <ul className="space-y-1.5">
-                                        {ingredientEntries.map((entry) => {
-                                            if (entry.items.length === 1) {
-                                                const item = entry.items[0]
-                                                const itemWithOptimisticChecked = {
-                                                    ...item,
-                                                    isChecked: getEffectiveChecked(item),
+                                                    return (
+                                                        <GroceryItem
+                                                            key={`${item.id}:${itemWithOptimisticChecked.isChecked ? '1' : '0'}`}
+                                                            item={itemWithOptimisticChecked}
+                                                            ingredientCategories={ingredientCategories}
+                                                            hideAmounts={hideAmounts}
+                                                        />
+                                                    )
                                                 }
 
+                                                const primaryItem = entry.items[0]
+                                                const summaryKey = `${group}:${entry.key}`
+                                                const isExpanded = expandedIngredientGroups.has(summaryKey)
+                                                const allChecked = entry.items.every((item) => getEffectiveChecked(item))
+                                                const someChecked = !allChecked && entry.items.some((item) => getEffectiveChecked(item))
+
+                                                const amountList = entry.items
+                                                    .map((item) => formatAmount(item))
+                                                    .filter(Boolean)
+
+                                                const displayName = hideAmounts || amountList.length === 0
+                                                    ? primaryItem.nameSnapshot
+                                                    : `${amountList.join(', ')} ${primaryItem.nameSnapshot}`
+
                                                 return (
-                                                    <GroceryItem
-                                                        key={`${item.id}:${itemWithOptimisticChecked.isChecked ? '1' : '0'}`}
-                                                        item={itemWithOptimisticChecked}
-                                                        ingredientCategories={ingredientCategories}
-                                                        hideAmounts={hideAmounts}
-                                                    />
-                                                )
-                                            }
-
-                                            const primaryItem = entry.items[0]
-                                            const summaryKey = `${group}:${entry.key}`
-                                            const isExpanded = expandedIngredientGroups.has(summaryKey)
-                                            const allChecked = entry.items.every((item) => getEffectiveChecked(item))
-                                            const someChecked = !allChecked && entry.items.some((item) => getEffectiveChecked(item))
-
-                                            const amountList = entry.items
-                                                .map((item) => formatAmount(item))
-                                                .filter(Boolean)
-
-                                            const displayName = hideAmounts || amountList.length === 0
-                                                ? primaryItem.nameSnapshot
-                                                : `${amountList.join(', ')} ${primaryItem.nameSnapshot}`
-
-                                            return (
-                                                <li key={summaryKey} className="space-y-1.5">
-                                                    <div className="bg-app-surface/80 border border-app-border rounded-lg p-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const nextChecked = !allChecked
-                                                                    void toggleGroupedItems(entry.items, nextChecked)
-                                                                }}
-                                                                className="flex-1 min-w-0 text-left flex items-center gap-2 rounded px-1 py-1 hover:bg-app-surface-soft/60 transition-colors"
-                                                                aria-label={allChecked ? 'Mark as not bought' : 'Mark as bought'}
-                                                            >
-                                                                <span
-                                                                    className={`h-7 w-7 rounded border text-sm shrink-0 inline-flex items-center justify-center ${
-                                                                        allChecked
-                                                                            ? 'bg-success-soft border-success text-success'
-                                                                            : someChecked
-                                                                                ? 'bg-warning-soft border-warning text-warning'
-                                                                                : 'bg-app-surface border-app-border-strong text-app-muted'
-                                                                    }`}
+                                                    <li key={summaryKey} className="space-y-1.5">
+                                                        <div className="bg-app-surface/80 border border-app-border rounded-lg p-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const nextChecked = !allChecked
+                                                                        void toggleGroupedItems(entry.items, nextChecked)
+                                                                    }}
+                                                                    className="flex-1 min-w-0 text-left flex items-center gap-2 rounded px-1 py-1 hover:bg-app-surface-soft/60 transition-colors"
+                                                                    aria-label={allChecked ? 'Mark as not bought' : 'Mark as bought'}
                                                                 >
-                                                                    {allChecked ? '✓' : someChecked ? '−' : ' '}
-                                                                </span>
-                                                                <span className="flex-1 min-w-0">
                                                                     <span
-                                                                        className={`font-medium block ${
-                                                                            allChecked ? 'line-through text-app-subtle/80' : 'text-app-text'
-                                                                        }`}
+                                                                        className={`h-7 w-7 rounded border text-sm shrink-0 inline-flex items-center justify-center ${allChecked
+                                                                                ? 'bg-success-soft border-success text-success'
+                                                                                : someChecked
+                                                                                    ? 'bg-warning-soft border-warning text-warning'
+                                                                                    : 'bg-app-surface border-app-border-strong text-app-muted'
+                                                                            }`}
                                                                     >
-                                                                        {displayName}
+                                                                        {allChecked ? '✓' : someChecked ? '−' : ' '}
                                                                     </span>
-                                                                </span>
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const next = new Set(expandedIngredientGroups)
-                                                                    if (next.has(summaryKey)) {
-                                                                        next.delete(summaryKey)
-                                                                    } else {
-                                                                        next.add(summaryKey)
-                                                                    }
-                                                                    setExpandedIngredientGroups(next)
-                                                                }}
-                                                                className="text-primary hover:text-primary-text hover:bg-app-surface-soft/80 rounded px-2.5 py-0.5 text-sm transition-colors shrink-0"
-                                                            >
-                                                                {isExpanded ? 'Hide' : 'Edit'}
-                                                            </button>
+                                                                    <span className="flex-1 min-w-0">
+                                                                        <span
+                                                                            className={`font-medium block ${allChecked ? 'line-through text-app-subtle/80' : 'text-app-text'
+                                                                                }`}
+                                                                        >
+                                                                            {displayName}
+                                                                        </span>
+                                                                    </span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const next = new Set(expandedIngredientGroups)
+                                                                        if (next.has(summaryKey)) {
+                                                                            next.delete(summaryKey)
+                                                                        } else {
+                                                                            next.add(summaryKey)
+                                                                        }
+                                                                        setExpandedIngredientGroups(next)
+                                                                    }}
+                                                                    className="text-primary hover:text-primary-text hover:bg-app-surface-soft/80 rounded px-2.5 py-0.5 text-sm transition-colors shrink-0"
+                                                                >
+                                                                    {isExpanded ? 'Hide' : 'Edit'}
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    </div>
 
-                                                    {isExpanded ? (
-                                                        <ul className="space-y-1.5 pl-2 border-l border-app-border/70">
-                                                            {entry.items.map((item) => {
-                                                                const itemWithOptimisticChecked = {
-                                                                    ...item,
-                                                                    isChecked: getEffectiveChecked(item),
-                                                                }
+                                                        {isExpanded ? (
+                                                            <ul className="space-y-1.5 pl-2 border-l border-app-border/70">
+                                                                {entry.items.map((item) => {
+                                                                    const itemWithOptimisticChecked = {
+                                                                        ...item,
+                                                                        isChecked: getEffectiveChecked(item),
+                                                                    }
 
-                                                                return (
-                                                                    <GroceryItem
-                                                                        key={`${item.id}:${itemWithOptimisticChecked.isChecked ? '1' : '0'}`}
-                                                                        item={itemWithOptimisticChecked}
-                                                                        ingredientCategories={ingredientCategories}
-                                                                        hideAmounts={hideAmounts}
-                                                                    />
-                                                                )
-                                                            })}
-                                                        </ul>
-                                                    ) : null}
-                                                </li>
-                                            )
-                                        })}
-                                    </ul>
-                                </section>
-                            )
-                        })
-                    )}
-                    <div className="md:hidden min-h-28 pt-4 pb-6 text-center text-sm text-app-subtle">
-                        Tap the + button to add another item to this list.
+                                                                    return (
+                                                                        <GroceryItem
+                                                                            key={`${item.id}:${itemWithOptimisticChecked.isChecked ? '1' : '0'}`}
+                                                                            item={itemWithOptimisticChecked}
+                                                                            ingredientCategories={ingredientCategories}
+                                                                            hideAmounts={hideAmounts}
+                                                                        />
+                                                                    )
+                                                                })}
+                                                            </ul>
+                                                        ) : null}
+                                                    </li>
+                                                )
+                                            })}
+                                        </ul>
+                                    </section>
+                                )
+                            })
+                        )}
+                        <div className="md:hidden min-h-16 pt-2 text-center text-sm text-app-subtle">
+                            Tap the + button to add another item to this list.
+                        </div>
                     </div>
-                </div>
                 </div>
             </div>
         </>

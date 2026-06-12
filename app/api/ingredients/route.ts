@@ -1,9 +1,24 @@
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedContext } from '@/lib/auth'
+import { getOptionalAuthenticatedContext } from '@/lib/auth'
+import { IngredientCategory } from '@prisma/client'
+
+function parseIngredientCategory(category: unknown): IngredientCategory | null {
+    const value = String(category || '')
+
+    return Object.values(IngredientCategory).includes(value as IngredientCategory)
+        ? (value as IngredientCategory)
+        : null
+}
 
 export async function GET() {
     try {
-        const { household } = await getAuthenticatedContext()
+        const context = await getOptionalAuthenticatedContext()
+
+        if (!context) {
+            return Response.json({ error: 'Authentication required' }, { status: 401 })
+        }
+
+        const { household } = context
         const ingredients = await prisma.ingredient.findMany({
             where: { householdId: household.id },
             orderBy: { name: 'asc' },
@@ -17,12 +32,29 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const { household } = await getAuthenticatedContext()
-        const body = await request.json()
-        const { name, category } = body
-        const trimmedName = String(name || '').trim()
+        const context = await getOptionalAuthenticatedContext()
 
-        if (!trimmedName || !category) {
+        if (!context) {
+            return Response.json({ error: 'Authentication required' }, { status: 401 })
+        }
+
+        const { household } = context
+        let body: unknown
+        try {
+            body = await request.json()
+        } catch {
+            return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
+
+        if (typeof body !== 'object' || body === null) {
+            return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
+
+        const { name, category } = body as Record<string, unknown>
+        const trimmedName = String(name || '').trim()
+        const parsedCategory = parseIngredientCategory(category)
+
+        if (!trimmedName || !parsedCategory) {
             return Response.json({ error: 'Name and category required' }, { status: 400 })
         }
 
@@ -44,7 +76,7 @@ export async function POST(request: Request) {
             data: {
                 householdId: household.id,
                 name: trimmedName,
-                category,
+                category: parsedCategory,
             },
         })
 

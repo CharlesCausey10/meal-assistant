@@ -9,6 +9,7 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "safety:audit": "node scripts/production-safety-audit.mjs",
     "prisma": "prisma"
   },
   "dependencies": {

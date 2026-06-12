@@ -2,25 +2,12 @@
 
 import { deleteMealLog } from './actions-meal-log'
 import { getDaysUntilExpiration, getExpirationStatus } from './utils/expiration'
+import { formatProtein } from './utils/protein'
 import type { MealLog } from '@prisma/client'
-
-function getProteinEmoji(protein: string | null) {
-    const emojiMap: Record<string, string> = {
-        'CHICKEN_BREAST': '🐔',
-        'CHICKEN_THIGHS': '🐔',
-        'ROTISSERIE_CHICKEN': '🐔',
-        'GROUND_BEEF': '🐄',
-        'PORK_BUTT': '🐷',
-        'FISH': '🐟',
-        'EGGS': '🥚'
-    }
-    return protein ? emojiMap[protein] || '🍴' : '🍴'
-}
 
 function getDaysSinceCooking(cookedAt: Date): number {
     const now = new Date()
-    const daysPassed = Math.floor((now.getTime() - cookedAt.getTime()) / (1000 * 60 * 60 * 24))
-    return daysPassed
+    return Math.floor((now.getTime() - cookedAt.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 function getStatusColor(status: string) {
@@ -36,21 +23,20 @@ function getStatusColor(status: string) {
     }
 }
 
-function getStatusIcon(status: string) {
+function getStatusDotClass(status: string) {
     switch (status) {
         case 'fresh':
-            return '🟢'
+            return 'bg-success'
         case 'expiring-soon':
-            return '🟡'
+            return 'bg-warning'
         case 'expired':
-            return '🔴'
+            return 'bg-danger'
         default:
-            return '⚪'
+            return 'bg-app-subtle'
     }
 }
 
 export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
-    // Sort by days until expiration (closest to expiring first)
     const sortedMealLogs = [...mealLogs].sort((a, b) => {
         const daysLeftA = getDaysUntilExpiration(a.cookedAt, a.protein)
         const daysLeftB = getDaysUntilExpiration(b.cookedAt, b.protein)
@@ -65,12 +51,12 @@ export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
                 </div>
             ) : (
                 <ul className="space-y-3">
-                    {sortedMealLogs.map(meal => {
+                    {sortedMealLogs.map((meal) => {
                         const daysLeft = getDaysUntilExpiration(meal.cookedAt, meal.protein)
                         const daysSince = getDaysSinceCooking(meal.cookedAt)
                         const status = getExpirationStatus(daysLeft)
                         const statusColor = getStatusColor(status)
-                        const statusIcon = getStatusIcon(status)
+                        const statusDotClass = getStatusDotClass(status)
 
                         return (
                             <li
@@ -83,18 +69,25 @@ export function MealLogList({ mealLogs }: { mealLogs: MealLog[] }) {
                                     }`}
                             >
                                 <div>
-                                    <div className="font-semibold text-app-text text-lg flex items-center gap-2">
-                                        <span>{getProteinEmoji(meal.protein)}</span>
-                                        <span>{meal.name}</span>
+                                    <div className="font-semibold text-app-text text-lg">
+                                        {meal.name}
                                     </div>
                                     <div className="text-sm text-app-muted">
-                                        <span className="text-app-subtle">{daysSince === 0 ? 'Today' : `${daysSince} day${daysSince !== 1 ? 's' : ''} ago`}</span>
+                                        {meal.protein ? (
+                                            <span>{formatProtein(meal.protein)} / </span>
+                                        ) : null}
+                                        <span className="text-app-subtle">
+                                            {daysSince === 0 ? 'Today' : `${daysSince} day${daysSince !== 1 ? 's' : ''} ago`}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className={`text-right ${statusColor}`}>
-                                        <div className="text-sm font-medium">
-                                            {statusIcon} {daysLeft > 1 ? daysLeft + ' days left' : daysLeft === 1 ? '1 day left' : 'Expired'}
+                                        <div className="flex items-center gap-2 text-sm font-medium">
+                                            <span className={`h-2.5 w-2.5 rounded-full ${statusDotClass}`} />
+                                            <span>
+                                                {daysLeft > 1 ? `${daysLeft} days left` : daysLeft === 1 ? '1 day left' : 'Expired'}
+                                            </span>
                                         </div>
                                     </div>
                                     <form action={deleteMealLog}>

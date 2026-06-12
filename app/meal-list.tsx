@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { deleteMeal, updateMeal } from './actions'
 import { addMealToGroceryList } from './actions-grocery'
-import { PreferenceInput } from './components/preference-input'
+import { PreferenceInput, TasteStars } from './components/preference-input'
 import { IngredientInput } from './components/ingredient-input'
 import { CategoryCheckboxGroup } from './components/category-checkbox-group'
 import { MealLogForm } from './components/meal-log-form'
@@ -14,6 +14,8 @@ import { Toast } from './components/toast'
 import type { Ingredient } from '@prisma/client'
 import type { SerializedMealWithIngredients } from './utils/convert-prisma'
 import { getMealCategoriesForDisplay, getMealCategoryLabel } from './utils/categories'
+import { formatProtein, PROTEIN_OPTIONS } from './utils/protein'
+import { formatTasteRating } from './utils/taste'
 
 interface IngredientWithQuantity extends Ingredient {
     quantity: number
@@ -26,9 +28,10 @@ type MealListProps = {
         id: number
         name: string
     }>
+    variant?: 'card' | 'row' | 'rail'
 }
 
-export function MealList({ meals, groceryLists }: MealListProps) {
+export function MealList({ meals, groceryLists, variant = 'card' }: MealListProps) {
     const [editingId, setEditingId] = useState<number | null>(null)
     const [loggingMealId, setLoggingMealId] = useState<number | null>(null)
     const [addingToListMealId, setAddingToListMealId] = useState<number | null>(null)
@@ -36,24 +39,6 @@ export function MealList({ meals, groceryLists }: MealListProps) {
     const [editErrorMessage, setEditErrorMessage] = useState<string | null>(null)
     const [editingIngredients, setEditingIngredients] = useState<IngredientWithQuantity[]>([])
     const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set())
-
-
-    const getProteinEmoji = (protein: string) => {
-        const emojiMap: Record<string, string> = {
-            'CHICKEN_BREAST': '🐔',
-            'CHICKEN_THIGHS': '🐔',
-            'ROTISSERIE_CHICKEN': '🐔',
-            'GROUND_BEEF': '🐄',
-            'PORK_BUTT': '🐷',
-            'FISH': '🐟',
-            'EGGS': '🥚'
-        }
-        return emojiMap[protein] || ''
-    }
-
-    const formatProtein = (protein: string) => {
-        return protein.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-    }
 
     const formatLastCooked = (isoDate: string) => {
         const cookedAt = new Date(isoDate)
@@ -65,6 +50,8 @@ export function MealList({ meals, groceryLists }: MealListProps) {
     }
 
     const selectedAddToListMeal = meals.find((meal) => meal.id === addingToListMealId) || null
+    const isRowVariant = variant === 'row'
+    const isRailVariant = variant === 'rail'
 
     useEffect(() => {
         if (!toastMessage) {
@@ -80,9 +67,24 @@ export function MealList({ meals, groceryLists }: MealListProps) {
 
     return (
         <>
-            <ul className="space-y-3">
-                {meals.map(meal => (
-                    <li key={meal.id} className="bg-app-surface/80 backdrop-blur-sm border border-primary/20 p-4 rounded-xl hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40 transition-all">
+            <ul className={
+                isRowVariant
+                    ? 'space-y-1.5'
+                    : isRailVariant
+                        ? 'flex gap-3 overflow-x-auto no-scrollbar pb-2'
+                        : 'space-y-3'
+            }>
+                {meals.map((meal) => (
+                    <li
+                        key={meal.id}
+                        className={
+                            isRowVariant
+                                ? 'rounded-lg border border-app-border bg-app-surface/80 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-app-surface'
+                                : isRailVariant
+                                    ? 'w-[78%] max-w-[20rem] shrink-0 rounded-xl border border-primary/20 bg-app-surface/90 p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10'
+                                    : 'bg-app-surface/80 backdrop-blur-sm border border-primary/20 p-4 rounded-xl hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40 transition-all'
+                        }
+                    >
                         {editingId === meal.id ? (
                             <form onSubmit={(e) => {
                                 e.preventDefault()
@@ -121,20 +123,21 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
                                 />
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    <select
-                                        name="protein"
-                                        defaultValue={meal.protein || ''}
-                                        className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
-                                    >
-                                        <option value="">Protein (optional)</option>
-                                        <option value="CHICKEN_BREAST">🐔 Chicken Breast</option>
-                                        <option value="CHICKEN_THIGHS">🐔 Chicken Thighs</option>
-                                        <option value="ROTISSERIE_CHICKEN">🐔 Rotisserie Chicken</option>
-                                        <option value="GROUND_BEEF">🐄 Ground Beef</option>
-                                        <option value="PORK_BUTT">🐷 Pork Butt</option>
-                                        <option value="FISH">🐟 Fish</option>
-                                        <option value="EGGS">🥚 Eggs</option>
-                                    </select>
+                                    <label className="space-y-1">
+                                        <span className="text-sm font-semibold text-app-text">Protein</span>
+                                        <select
+                                            name="protein"
+                                            defaultValue={meal.protein || ''}
+                                            className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
+                                        >
+                                            <option value="">Optional</option>
+                                            {PROTEIN_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
                                     <PreferenceInput defaultValue={meal.preference || ''} padSize="sm" />
                                 </div>
                                 <CategoryCheckboxGroup
@@ -143,7 +146,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                 />
                                 <IngredientInput
                                     onIngredientsChange={setEditingIngredients}
-                                    initialIngredients={meal.ingredients.map(ing => ({
+                                    initialIngredients={meal.ingredients.map((ing) => ({
                                         ingredient: ing.ingredient,
                                         quantity: Number(ing.quantity),
                                         unit: ing.unit,
@@ -170,22 +173,20 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                 </div>
                             </form>
                         ) : (
-                            <div className="space-y-3">
+                            <div className={isRowVariant ? 'space-y-2' : 'space-y-3'}>
+                                <div className={isRowVariant ? 'flex items-start justify-between gap-3 md:items-center' : 'flex justify-between items-start'}>
+                                    <div className="min-w-0">
+                                        <div className={isRowVariant ? 'truncate font-semibold text-app-text' : 'font-semibold text-app-text text-lg'}>{meal.name}</div>
 
-                                {/* Title Row */}
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="font-semibold text-app-text text-lg">{meal.name}</div>
-
-                                        <div className="text-sm text-primary-text">
-                                            {`${meal.protein ? getProteinEmoji(meal.protein) + ' ' : ''}${meal.protein ? formatProtein(meal.protein) + ' / ' : ''}${getMealCategoriesForDisplay(meal).map(getMealCategoryLabel).join(' / ')}`}
-
-                                            {meal.preference && (
-                                                <span className="ml-2 text-xs text-app-subtle">
-                                                    {meal.preference}/10
-                                                </span>
-                                            )}
+                                        <div className={isRowVariant ? 'truncate text-xs text-primary-text' : 'text-sm text-primary-text'}>
+                                            {`${meal.protein ? `${formatProtein(meal.protein)} / ` : ''}${getMealCategoriesForDisplay(meal).map(getMealCategoryLabel).join(' / ')}`}
                                         </div>
+                                        {meal.preference ? (
+                                            <div className="mt-1 flex items-center gap-2 text-xs text-app-subtle">
+                                                <TasteStars score={meal.preference} size="sm" />
+                                                <span>{formatTasteRating(meal.preference)}</span>
+                                            </div>
+                                        ) : null}
                                         {meal.lastCookedAt && (
                                             <div className="text-xs text-app-subtle mt-1">
                                                 Last cooked: {formatLastCooked(meal.lastCookedAt)}
@@ -193,14 +194,13 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                         )}
                                     </div>
 
-                                    {/* Kebab Menu */}
-                                    <div className="flex gap-1">
+                                    <div className="flex shrink-0 gap-1">
                                         <button
                                             onClick={() => {
                                                 setEditingId(meal.id)
                                                 setEditErrorMessage(null)
                                                 setEditingIngredients(
-                                                    meal.ingredients.map(ing => ({
+                                                    meal.ingredients.map((ing) => ({
                                                         ...ing.ingredient,
                                                         quantity: Number(ing.quantity),
                                                         unit: ing.unit,
@@ -230,19 +230,17 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     </div>
                                 </div>
 
-                                {/* Recipe Link */}
-                                {meal.recipeUrl && (
+                                {meal.recipeUrl && !isRowVariant && (
                                     <a
                                         href={meal.recipeUrl}
                                         target="_blank"
                                         className="flex items-center gap-2 text-info hover:text-info-hover transition-colors"
                                     >
-                                        📖 View Recipe →
+                                        View Recipe
                                     </a>
                                 )}
 
-                                {/* Ingredient Dropdown */}
-                                {meal.ingredients.length > 0 && (
+                                {meal.ingredients.length > 0 && !isRowVariant && (
                                     <div className="bg-app-surface-soft/70 rounded-lg border border-app-border/60">
                                         <button
                                             type="button"
@@ -258,15 +256,15 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                             className="w-full flex justify-between items-center px-3 py-2 text-sm text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg"
                                         >
                                             <span>
-                                                {expandedIngredients.has(meal.id) ? '▾' : '▸'} Ingredients ({meal.ingredients.length})
+                                                {expandedIngredients.has(meal.id) ? 'Hide' : 'Show'} Ingredients ({meal.ingredients.length})
                                             </span>
                                         </button>
 
                                         {expandedIngredients.has(meal.id) && (
                                             <div className="px-4 pb-3 text-sm text-app-muted space-y-1">
-                                                {meal.ingredients.map(ing => (
+                                                {meal.ingredients.map((ing) => (
                                                     <div key={ing.id}>
-                                                        • {String(ing.quantity)} {ing.unit} {ing.ingredient.name}
+                                                        {String(ing.quantity)} {ing.unit} {ing.ingredient.name}
                                                     </div>
                                                 ))}
                                             </div>
@@ -274,21 +272,26 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     </div>
                                 )}
 
-                                {/* Action Buttons */}
-                                <div className="mt-2 flex items-center gap-2">
+                                <div className={isRowVariant ? 'flex items-center gap-2 md:justify-end' : 'mt-2 flex items-center gap-2'}>
                                     <button
                                         onClick={() => setLoggingMealId(meal.id)}
-                                        className="flex-1 flex items-center justify-center gap-2 bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast py-3 rounded-xl font-semibold transition-all shadow-lg shadow-primary/20"
+                                        className={isRowVariant
+                                            ? 'inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-contrast hover:bg-primary-hover md:flex-none'
+                                            : 'flex-1 flex items-center justify-center gap-2 bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast py-3 rounded-xl font-semibold transition-all shadow-lg shadow-primary/20'
+                                        }
                                     >
-                                        <CookingAnimation hoverOnly />
+                                        {!isRowVariant ? <CookingAnimation hoverOnly /> : null}
                                         Cook
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setAddingToListMealId(meal.id)}
-                                        className="shrink-0 bg-app-surface-soft hover:bg-app-border-strong text-app-text px-4 py-3 rounded-xl font-semibold transition-colors border border-app-border"
+                                        className={isRowVariant
+                                            ? 'min-h-9 shrink-0 rounded-lg border border-app-border bg-app-surface-soft px-3 text-sm font-semibold text-app-text hover:bg-app-border-strong'
+                                            : 'shrink-0 bg-app-surface-soft hover:bg-app-border-strong text-app-text px-4 py-3 rounded-xl font-semibold transition-colors border border-app-border'
+                                        }
                                     >
-                                        Add to List
+                                        {isRowVariant ? 'List' : 'Add to List'}
                                     </button>
                                 </div>
                             </div>
@@ -300,8 +303,8 @@ export function MealList({ meals, groceryLists }: MealListProps) {
             <ResponsiveModal title="Cook Meal" isOpen={loggingMealId !== null} onClose={() => setLoggingMealId(null)}>
                 <MealLogForm
                     mealId={loggingMealId ?? undefined}
-                    defaultName={meals.find(m => m.id === loggingMealId)?.name || ''}
-                    defaultProtein={meals.find(m => m.id === loggingMealId)?.protein || ''}
+                    defaultName={meals.find((meal) => meal.id === loggingMealId)?.name || ''}
+                    defaultProtein={meals.find((meal) => meal.id === loggingMealId)?.protein || ''}
                     onSuccess={() => setLoggingMealId(null)}
                 />
             </ResponsiveModal>

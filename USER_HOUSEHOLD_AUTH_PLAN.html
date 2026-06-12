@@ -323,6 +323,20 @@
         model is "your household", not a multi-household workspace switcher.
       </div>
       <div class="note">
+        <strong>WorkOS membership cleanup hardening:</strong> household transition paths now prune extra
+        WorkOS Organization memberships for the affected user after successful local membership moves. This
+        keeps WorkOS aligned with the app-level one-household rule when a user accepts an invite, leaves into
+        a copied household, is removed into a personal household, links an existing household to WorkOS, or
+        returns through the auth callback.
+      </div>
+      <div class="note">
+        <strong>Cross-household mutation hardening:</strong> meal create/edit now validates submitted
+        ingredient IDs against the authenticated household before creating <code>MealIngredient</code> rows.
+        Adding a meal to a grocery list now validates both the list and meal belong to the current household
+        before writing <code>GroceryListMeal</code>. The ingredients API now returns JSON 401 responses for
+        unauthenticated requests and validates category values against the Prisma enum.
+      </div>
+      <div class="note">
         <strong>Starter meal picker removed:</strong> new households now start with no meals. They can create
         meals manually or copy opted-in meal templates from Discover. Global/default rows are still useful for
         ingredients, but not for meals.

@@ -1,8 +1,8 @@
 'use client'
 
+import { PROTEIN_OPTIONS } from './utils/protein'
+
 type FiltersProps = {
-    searchValue: string
-    onSearchChange: (value: string) => void
     selectedProteins: string[]
     onProteinsChange: (proteins: string[]) => void
     selectedCategories: string[]
@@ -11,13 +11,7 @@ type FiltersProps = {
 
 const PROTEIN_FILTER_OPTIONS = [
     { value: 'NO_PROTEIN', label: 'No protein' },
-    { value: 'EGGS', label: '🥚 Eggs' },
-    { value: 'CHICKEN_BREAST', label: '🐔 Chicken Breast' },
-    { value: 'CHICKEN_THIGHS', label: '🐔 Chicken Thighs' },
-    { value: 'ROTISSERIE_CHICKEN', label: '🐔 Rotisserie Chicken' },
-    { value: 'GROUND_BEEF', label: '🐄 Ground Beef' },
-    { value: 'PORK_BUTT', label: '🐷 Pork Butt' },
-    { value: 'FISH', label: '🐟 Fish' },
+    ...PROTEIN_OPTIONS,
 ]
 
 const CATEGORY_FILTER_OPTIONS = [
@@ -30,23 +24,17 @@ const CATEGORY_FILTER_OPTIONS = [
 ]
 
 export function Filters({
-    searchValue,
-    onSearchChange,
     selectedProteins,
     onProteinsChange,
     selectedCategories,
     onCategoriesChange,
 }: FiltersProps) {
-
     const handleCheckboxChange = (key: string, value: string, checked: boolean) => {
         const current = key === 'protein' ? selectedProteins : selectedCategories
 
-        let updated: string[]
-        if (checked) {
-            updated = [...current, value]
-        } else {
-            updated = current.filter(v => v !== value)
-        }
+        const updated = checked
+            ? [...current, value]
+            : current.filter((currentValue) => currentValue !== value)
 
         if (key === 'protein') {
             onProteinsChange(updated)
@@ -60,10 +48,6 @@ export function Filters({
         return current.includes(value)
     }
 
-    const clearSearch = () => {
-        onSearchChange('')
-    }
-
     const clearProtein = () => {
         onProteinsChange([])
     }
@@ -73,62 +57,46 @@ export function Filters({
     }
 
     return (
-        <div>
-            <div className="hidden md:block mb-3">
-                <div className="flex gap-2">
-                    <button
-                        disabled={!searchValue}
-                        onClick={clearSearch}
-                        className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors disabled:text-app-subtle/60 disabled:hover:bg-transparent"
-                        aria-label="Clear search"
-                    >
-                        ✕
-                    </button>
-                    <input
-                        type="text"
-                        placeholder="Search meals..."
-                        value={searchValue}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base placeholder-app-subtle"
-                    />
-                </div>
-            </div>
-            {/* Mobile: Compact pill rows */}
-            <div className="md:hidden space-y-2">
+        <div className="space-y-3">
+            <div className="md:hidden space-y-2" aria-label="Filters">
+                <h3 className="text-sm font-semibold text-primary-text">Refine</h3>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Protein filters">
-                        {PROTEIN_FILTER_OPTIONS.map(({ value, label }) => (
-                            <button
-                                key={value}
-                                onClick={() => handleCheckboxChange('protein', value, !isChecked('protein', value))}
-                                className={`px-3 py-2 rounded-full text-base font-medium transition-all shrink-0 ${
-                                    isChecked('protein', value)
-                                        ? 'bg-primary text-primary-contrast border border-primary'
-                                        : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
-                                }`}
-                            >
-                                {label}
-                            </button>
-                        ))}
+                    {PROTEIN_FILTER_OPTIONS.map(({ value, label }) => (
+                        <button
+                            key={value}
+                            onClick={() => handleCheckboxChange('protein', value, !isChecked('protein', value))}
+                            className={`px-3 py-2 rounded-full text-base font-medium transition-all shrink-0 ${
+                                isChecked('protein', value)
+                                    ? 'bg-primary text-primary-contrast border border-primary'
+                                    : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Category filters">
-                        {CATEGORY_FILTER_OPTIONS.map(({ value, label }) => (
-                            <button
-                                key={value}
-                                onClick={() => handleCheckboxChange('category', value, !isChecked('category', value))}
-                                className={`px-3 py-2 rounded-full text-base font-medium transition-all shrink-0 ${
-                                    isChecked('category', value)
-                                        ? 'bg-primary text-primary-contrast border border-primary'
-                                        : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
-                                }`}
-                            >
-                                {label}
-                            </button>
-                        ))}
+                    {CATEGORY_FILTER_OPTIONS.map(({ value, label }) => (
+                        <button
+                            key={value}
+                            onClick={() => handleCheckboxChange('category', value, !isChecked('category', value))}
+                            className={`px-3 py-2 rounded-full text-base font-medium transition-all shrink-0 ${
+                                isChecked('category', value)
+                                    ? 'bg-primary text-primary-contrast border border-primary'
+                                    : 'bg-app-surface-soft text-app-text/85 border border-app-border hover:border-primary'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Desktop: Pill Button Layout */}
-            <div className="hidden md:flex md:flex-col gap-3">
+            <div className="hidden rounded-lg border border-app-border bg-app-surface/80 p-3 md:flex md:flex-col gap-3">
+                <div>
+                    <h3 className="text-base font-semibold text-app-text">Filters</h3>
+                    <p className="text-sm text-app-muted">Browse by protein or meal window.</p>
+                </div>
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         {selectedProteins.length > 0 && (
@@ -137,7 +105,7 @@ export function Filters({
                                 className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-md py-1 px-2 transition-colors text-xs"
                                 aria-label="Clear proteins"
                             >
-                                ✕
+                                X
                             </button>
                         )}
                         <h3 className="text-xs py-1 font-medium text-primary-text">Proteins</h3>
@@ -166,7 +134,7 @@ export function Filters({
                                 className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-md py-1 px-2 transition-colors text-xs"
                                 aria-label="Clear categories"
                             >
-                                ✕
+                                X
                             </button>
                         )}
                         <h3 className="text-xs py-1 font-medium text-primary-text">Categories</h3>

@@ -316,6 +316,15 @@ export async function addMealToGroceryList(formData: FormData) {
         return
     }
 
+    const meal = await prisma.meal.findFirst({
+        where: { id: mealId, householdId: household.id },
+        select: { id: true },
+    })
+
+    if (!meal) {
+        return
+    }
+
     const mealIngredients = await prisma.mealIngredient.findMany({
         where: { mealId, meal: { householdId: household.id } },
         include: {

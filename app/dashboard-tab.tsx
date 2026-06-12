@@ -1,13 +1,28 @@
 import { Category, type MealLog } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { measureAsync } from '@/lib/timing'
+import { logMeal } from './actions-meal-log'
+import { RateMealControl } from './components/rate-meal-control'
 import { getDaysUntilExpiration, getExpirationStatus } from './utils/expiration'
 import { formatLabel } from './utils/format'
 import { serializeMeals, type SerializedMealWithIngredients } from './utils/convert-prisma'
 import { getMealCategoriesForDisplay, hasMealCategory } from './utils/categories'
+import { TodayAllMealsSection } from './today-all-meals-section'
+import { formatTasteRating } from './utils/taste'
 
 type MealStats = {
     lastCookedAt: Date | null
     cookedCount: number
+}
+
+type CookedMealStatsRow = {
+    mealId: number | null
+    _max: {
+        cookedAt: Date | null
+    }
+    _count: {
+        _all: number
+    }
 }
 
 type MealWindow = {
@@ -48,26 +63,18 @@ function getMealWindow(now: Date): MealWindow {
 }
 
 function buildStatsByMealId(
-    logs: Array<Pick<MealLog, 'mealId' | 'cookedAt'>>
+    rows: CookedMealStatsRow[]
 ): Map<number, MealStats> {
     const statsByMealId = new Map<number, MealStats>()
 
-    for (const log of logs) {
-        if (log.mealId === null) {
+    for (const row of rows) {
+        if (row.mealId === null) {
             continue
         }
 
-        const current = statsByMealId.get(log.mealId) ?? {
-            lastCookedAt: null,
-            cookedCount: 0,
-        }
-
-        statsByMealId.set(log.mealId, {
-            lastCookedAt:
-                current.lastCookedAt === null || log.cookedAt > current.lastCookedAt
-                    ? log.cookedAt
-                    : current.lastCookedAt,
-            cookedCount: current.cookedCount + 1,
+        statsByMealId.set(row.mealId, {
+            lastCookedAt: row._max.cookedAt,
+            cookedCount: row._count._all,
         })
     }
 
@@ -109,7 +116,7 @@ function interleaveMealGroups(
 
 function formatDaysSince(daysSinceCooked: number | null): string {
     if (daysSinceCooked === null) {
-        return 'No cooked log'
+        return ''
     }
 
     if (daysSinceCooked === 0) {
@@ -119,8 +126,8 @@ function formatDaysSince(daysSinceCooked: number | null): string {
     return `Last cooked ${daysSinceCooked}d ago`
 }
 
-function preferenceChip(meal: SerializedMealWithIngredients): string {
-    return meal.preference === null ? 'No score' : `${meal.preference}/10`
+function tasteChip(meal: SerializedMealWithIngredients): string {
+    return meal.preference === null ? 'Not rated' : formatTasteRating(meal.preference)
 }
 
 function ingredientsChip(meal: SerializedMealWithIngredients): string {
@@ -128,14 +135,18 @@ function ingredientsChip(meal: SerializedMealWithIngredients): string {
     return count === 1 ? '1 ingredient' : `${count} ingredients`
 }
 
+function getTodayInputValue() {
+    return new Date().toISOString().slice(0, 10)
+}
+
 function getMealReason(meal: SerializedMealWithIngredients): string {
     const category = getMealCategoriesForDisplay(meal).map(formatLabel).join(' / ')
-    const cookedText =
-        meal.cookedCount > 0
-            ? `cooked ${meal.cookedCount} time${meal.cookedCount === 1 ? '' : 's'}`
-            : 'no cooked log'
 
-    return `${category} - ${cookedText}`
+    if (meal.cookedCount === 0) {
+        return category
+    }
+
+    return `${category} - cooked ${meal.cookedCount} time${meal.cookedCount === 1 ? '' : 's'}`
 }
 
 function MealRail({
@@ -170,7 +181,7 @@ function MealRail({
 
                         <div className="flex flex-wrap gap-1.5">
                             <span className="rounded-full bg-primary-soft px-2 py-1 text-xs font-semibold text-primary-text">
-                                {preferenceChip(meal)}
+                                {tasteChip(meal)}
                             </span>
                             {meal.daysSinceCooked !== null ? (
                                 <span className="rounded-full bg-app-surface-soft px-2 py-1 text-xs font-semibold text-app-muted">
@@ -186,6 +197,24 @@ function MealRail({
                                 <span className="rounded-full bg-info/15 px-2 py-1 text-xs font-semibold text-info">
                                     Has recipe
                                 </span>
+                            ) : null}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <form action={logMeal}>
+                                <input type="hidden" name="mealId" value={meal.id} />
+                                <input type="hidden" name="name" value={meal.name} />
+                                <input type="hidden" name="protein" value={meal.protein ?? ''} />
+                                <input type="hidden" name="cookedAt" value={getTodayInputValue()} />
+                                <button
+                                    type="submit"
+                                    className="min-h-9 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-contrast hover:bg-primary-hover"
+                                >
+                                    Cook today
+                                </button>
+                            </form>
+                            {meal.preference === null ? (
+                                <RateMealControl mealId={meal.id} mealName={meal.name} />
                             ) : null}
                         </div>
                     </div>
@@ -268,54 +297,74 @@ export async function DashboardTab({
     householdId: number
     userId: number
 }) {
-    const [meals, cookedLogs, activeLeftovers] = await Promise.all([
-        prisma.meal.findMany({
-            where: { householdId },
-            include: {
-                ingredients: {
-                    include: {
-                        ingredient: true,
+    const [meals, cookedLogs, activeLeftovers, groceryLists] = await measureAsync(
+        'tab.today.queries',
+        () => Promise.all([
+            prisma.meal.findMany({
+                where: { householdId },
+                include: {
+                    ingredients: {
+                        include: {
+                            ingredient: true,
+                        },
+                    },
+                    preferences: {
+                        where: { userId },
+                        select: { score: true },
+                    },
+                    categories: {
+                        select: { category: true },
+                        orderBy: { id: 'asc' },
                     },
                 },
-                preferences: {
-                    where: { userId },
-                    select: { score: true },
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.mealLog.groupBy({
+                by: ['mealId'],
+                where: {
+                    householdId,
+                    mealId: { not: null },
                 },
-                categories: {
-                    select: { category: true },
-                    orderBy: { id: 'asc' },
+                _max: {
+                    cookedAt: true,
                 },
-            },
-            orderBy: { createdAt: 'desc' },
-        }),
-        prisma.mealLog.findMany({
-            where: {
-                householdId,
-                mealId: { not: null },
-            },
-            select: {
-                mealId: true,
-                cookedAt: true,
-            },
-            orderBy: { cookedAt: 'desc' },
-        }),
-        prisma.mealLog.findMany({
-            where: { householdId, isActive: true },
-            include: {
-                meal: {
-                    select: {
-                        name: true,
+                _count: {
+                    _all: true,
+                },
+            }),
+            prisma.mealLog.findMany({
+                where: { householdId, isActive: true },
+                select: {
+                    id: true,
+                    name: true,
+                    protein: true,
+                    cookedAt: true,
+                    mealId: true,
+                    meal: {
+                        select: {
+                            name: true,
+                        },
                     },
                 },
-            },
-            orderBy: { cookedAt: 'desc' },
-        }),
-    ])
+                orderBy: { cookedAt: 'desc' },
+            }),
+            prisma.groceryList.findMany({
+                where: { householdId },
+                select: {
+                    id: true,
+                    name: true,
+                },
+                orderBy: { updatedAt: 'desc' },
+            }),
+        ]),
+        { tab: 'today' }
+    )
 
     const mealWindow = getMealWindow(new Date())
     const statsByMealId = buildStatsByMealId(cookedLogs)
     const dashboardMeals = serializeMeals(meals, statsByMealId)
         .filter((meal) => !hasMealCategory(meal, Category.DESSERT))
+    const allMeals = serializeMeals(meals, statsByMealId)
     const rankedMealWindowIdeas = dashboardMeals
         .filter((meal) => mealWindow.categories.some((category) => hasMealCategory(meal, category)))
         .sort(rankMeals)
@@ -326,7 +375,7 @@ export async function DashboardTab({
         .slice(0, 8)
     const forgottenFavorites = dashboardMeals
         .filter((meal) => (meal.preference ?? 0) >= 7)
-        .filter((meal) => meal.daysSinceCooked === null || meal.daysSinceCooked >= 45)
+        .filter((meal) => meal.daysSinceCooked !== null && meal.daysSinceCooked >= 45)
         .sort(rankMeals)
         .slice(0, 8)
     const snackIdeas = dashboardMeals
@@ -337,24 +386,10 @@ export async function DashboardTab({
         <div className="h-full overflow-y-auto p-3 pb-6 md:p-5">
             <div className="mx-auto flex max-w-5xl flex-col gap-5">
                 <section>
-                    <div className="mb-3 flex items-start justify-between gap-4 px-1">
-                        <div>
-                            <p className="text-sm font-semibold text-app-muted">Today</p>
-                            <h2 className="mt-1 text-2xl font-semibold leading-tight text-app-text">
-                                What sounds good?
-                            </h2>
-                            <p className="mt-1 text-sm text-app-muted">
-                                Preference score, meal type, cooked history, recipe URL, and ingredient count.
-                            </p>
-                        </div>
-                        <span className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary-text">
-                            {mealWindow.label}
-                        </span>
-                    </div>
                     <div className="mb-2 px-1">
-                        <h3 className="text-lg font-semibold text-app-text">
+                        <h2 className="text-lg font-semibold text-app-text">
                             Top {mealWindow.label} Ideas
-                        </h3>
+                        </h2>
                     </div>
                     <MealRail meals={topMealIdeas} emptyText={`No ${mealWindow.label.toLowerCase()} meals yet.`} />
                 </section>
@@ -369,16 +404,15 @@ export async function DashboardTab({
                     <UseSoonRail logs={activeLeftovers} />
                 </section>
 
-                <section>
-                    <div className="mb-2 px-1">
-                        <h2 className="text-lg font-semibold text-app-text">Forgotten Favorites</h2>
-                        <p className="text-sm text-app-muted">High preference plus no recent cooked log.</p>
-                    </div>
-                    <MealRail
-                        meals={forgottenFavorites}
-                        emptyText="No forgotten favorites yet. Cooked history will populate this."
-                    />
-                </section>
+                {forgottenFavorites.length > 0 ? (
+                    <section>
+                        <div className="mb-2 px-1">
+                            <h2 className="text-lg font-semibold text-app-text">Forgotten Favorites</h2>
+                            <p className="text-sm text-app-muted">High taste score plus no recent cooked history.</p>
+                        </div>
+                        <MealRail meals={forgottenFavorites} emptyText="" />
+                    </section>
+                ) : null}
 
                 <section>
                     <div className="mb-2 px-1">
@@ -387,6 +421,8 @@ export async function DashboardTab({
                     </div>
                     <MealRail meals={snackIdeas} emptyText="No snack meals yet." />
                 </section>
+
+                <TodayAllMealsSection meals={allMeals} groceryLists={groceryLists} />
             </div>
         </div>
     )

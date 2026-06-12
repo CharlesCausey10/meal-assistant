@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { measureAsync } from '@/lib/timing'
 import { GroceryListWrapper } from './components/grocery-list-wrapper'
 import { formatLabel } from './utils/format'
 import type { IngredientCategory } from '@prisma/client'
@@ -50,49 +51,44 @@ export async function GroceryTab({
 }) {
     const params = await searchParams
 
-    const [groceryLists, allMeals] = await Promise.all([
-        prisma.groceryList.findMany({
-            where: { householdId },
-            include: {
-                sourceMeals: {
-                    include: {
-                        meal: true,
+    const [groceryListsForSidebar, allMeals] = await measureAsync(
+        'tab.grocery.baseQueries',
+        () => Promise.all([
+            prisma.groceryList.findMany({
+                where: { householdId },
+                select: {
+                    id: true,
+                    name: true,
+                },
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.meal.findMany({
+                where: { householdId },
+                select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                    categories: {
+                        select: { category: true },
+                        orderBy: { id: 'asc' },
                     },
-                    orderBy: { createdAt: 'asc' },
+                    _count: {
+                        select: { ingredients: true },
+                    },
+                    preferences: {
+                        where: { userId },
+                        select: { score: true },
+                    },
                 },
-                items: {
-                    orderBy: [
-                        { category: 'asc' },
-                        { sortOrder: 'asc' },
-                        { createdAt: 'asc' },
-                    ],
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        }),
-        prisma.meal.findMany({
-            where: { householdId },
-            select: {
-                id: true,
-                name: true,
-                category: true,
-                categories: {
-                    select: { category: true },
-                    orderBy: { id: 'asc' },
-                },
-                ingredients: true,
-                preferences: {
-                    where: { userId },
-                    select: { score: true },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        }),
-    ])
+                orderBy: { createdAt: 'desc' },
+            }),
+        ]),
+        { tab: 'grocery' }
+    )
 
     // Filter out meals that don't have any ingredients
     const meals = allMeals
-        .filter((meal) => meal.ingredients.length > 0)
+        .filter((meal) => meal._count.ingredients > 0)
         .sort((a, b) => {
             const preferenceDiff = (b.preferences[0]?.score ?? -1) - (a.preferences[0]?.score ?? -1)
             if (preferenceDiff !== 0) return preferenceDiff
@@ -100,11 +96,58 @@ export async function GroceryTab({
             return b.id - a.id
         })
 
-    const selectedListId = isPositiveInt(params.listId) ? parseInt(params.listId!, 10) : null
-    const selectedList =
-        (selectedListId ? groceryLists.find((list) => list.id === selectedListId) : undefined) ||
-        groceryLists[0] ||
-        null
+    const requestedListId = isPositiveInt(params.listId) ? parseInt(params.listId!, 10) : null
+    const selectedListId = requestedListId && groceryListsForSidebar.some((list) => list.id === requestedListId)
+        ? requestedListId
+        : groceryListsForSidebar[0]?.id ?? null
+
+    const selectedList = selectedListId
+        ? await measureAsync(
+            'tab.grocery.selectedListQuery',
+            () => prisma.groceryList.findFirst({
+                where: {
+                    id: selectedListId,
+                    householdId,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    notes: true,
+                    sourceMeals: {
+                        select: {
+                            id: true,
+                            meal: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                        orderBy: { createdAt: 'asc' },
+                    },
+                    items: {
+                        select: {
+                            id: true,
+                            ingredientId: true,
+                            nameSnapshot: true,
+                            quantity: true,
+                            unit: true,
+                            category: true,
+                            note: true,
+                            isChecked: true,
+                            sortOrder: true,
+                            createdAt: true,
+                        },
+                        orderBy: [
+                            { category: 'asc' },
+                            { sortOrder: 'asc' },
+                            { createdAt: 'asc' },
+                        ],
+                    },
+                },
+            }),
+            { tab: 'grocery' }
+        )
+        : null
 
     // Serialize Decimal fields for client component
     const serializedSelectedList = selectedList
@@ -129,12 +172,6 @@ export async function GroceryTab({
             category: meal.category,
             categories: meal.categories.map((category) => category.category),
         }).map(formatLabel).join(' / '),
-    }))
-
-    // Map to only the fields needed by the sidebar to avoid passing Decimal objects
-    const groceryListsForSidebar = groceryLists.map((list) => ({
-        id: list.id,
-        name: list.name,
     }))
 
     return (

@@ -1,6 +1,17 @@
 import { prisma } from '@/lib/prisma'
+import { measureAsync } from '@/lib/timing'
 import { MealPlannerContent } from './meal-planner-content'
 import { serializeMeals } from './utils/convert-prisma'
+
+type CookedMealStatsRow = {
+    mealId: number | null
+    _max: {
+        cookedAt: Date | null
+    }
+    _count: {
+        _all: number
+    }
+}
 
 export async function MealPlannerTab({
     searchParams,
@@ -13,67 +24,65 @@ export async function MealPlannerTab({
 }) {
     await searchParams
 
-    const [meals, groceryLists, cookedLogs] = await Promise.all([
-        prisma.meal.findMany({
-            where: { householdId },
-            include: {
-                ingredients: {
-                    include: {
-                        ingredient: true,
-                    }
+    const [meals, groceryLists, cookedLogs] = await measureAsync(
+        'tab.meals.queries',
+        () => Promise.all([
+            prisma.meal.findMany({
+                where: { householdId },
+                include: {
+                    ingredients: {
+                        include: {
+                            ingredient: true,
+                        },
+                    },
+                    preferences: {
+                        where: { userId },
+                        select: { score: true },
+                    },
+                    categories: {
+                        select: { category: true },
+                        orderBy: { id: 'asc' },
+                    },
                 },
-                preferences: {
-                    where: { userId },
-                    select: { score: true },
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.groceryList.findMany({
+                where: { householdId },
+                select: {
+                    id: true,
+                    name: true,
                 },
-                categories: {
-                    select: { category: true },
-                    orderBy: { id: 'asc' },
+                orderBy: [
+                    { updatedAt: 'desc' },
+                    { createdAt: 'desc' },
+                ],
+            }),
+            prisma.mealLog.groupBy({
+                by: ['mealId'],
+                where: {
+                    householdId,
+                    mealId: { not: null },
                 },
-            },
-            orderBy: { createdAt: 'desc' },
-        }),
-        prisma.groceryList.findMany({
-            where: { householdId },
-            select: {
-                id: true,
-                name: true,
-            },
-            orderBy: [
-                { updatedAt: 'desc' },
-                { createdAt: 'desc' },
-            ],
-        }),
-        prisma.mealLog.findMany({
-            where: {
-                householdId,
-                mealId: { not: null },
-            },
-            select: {
-                mealId: true,
-                cookedAt: true,
-            },
-            orderBy: { cookedAt: 'desc' },
-        }),
-    ])
+                _max: {
+                    cookedAt: true,
+                },
+                _count: {
+                    _all: true,
+                },
+            }),
+        ]),
+        { tab: 'meals' }
+    )
 
     const cookedStatsByMealId = new Map<number, { lastCookedAt: Date | null; cookedCount: number }>()
-    for (const log of cookedLogs) {
-        if (log.mealId === null) {
+    for (const row of cookedLogs as CookedMealStatsRow[]) {
+        if (row.mealId === null) {
             continue
         }
 
-        const current = cookedStatsByMealId.get(log.mealId) ?? {
-            lastCookedAt: null,
-            cookedCount: 0,
-        }
-
-        cookedStatsByMealId.set(log.mealId, {
-            lastCookedAt:
-                current.lastCookedAt === null || log.cookedAt > current.lastCookedAt
-                    ? log.cookedAt
-                    : current.lastCookedAt,
-            cookedCount: current.cookedCount + 1,
+        cookedStatsByMealId.set(row.mealId, {
+            lastCookedAt: row._max.cookedAt,
+            cookedCount: row._count._all,
         })
     }
 

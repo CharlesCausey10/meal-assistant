@@ -9,6 +9,10 @@ import { getAuthenticatedActionContext, upsertUserFromWorkOS } from '@/lib/auth'
 import { copyMealLogsToHousehold, copyMealsAndIngredientsToHousehold } from '@/lib/household-copy'
 import { createInviteToken, ensureHouseholdInviteToken } from '@/lib/household-invites'
 import { prisma } from '@/lib/prisma'
+import {
+    deleteWorkOSOrganization,
+    ensureOnlyWorkOSOrganizationMembership,
+} from '@/lib/workos-memberships'
 
 function getHouseholdName(formData: FormData): string | null {
     const name = String(formData.get('name') || '').trim()
@@ -17,33 +21,6 @@ function getHouseholdName(formData: FormData): string | null {
 
 function getDefaultHouseholdName(user: { firstName: string | null }): string {
     return user.firstName ? `${user.firstName}'s Household` : 'My Household'
-}
-
-async function removeWorkOSOrganizationMembership(organizationId: string, workosUserId: string) {
-    const workos = getWorkOS()
-    const memberships = await workos.userManagement.listOrganizationMemberships({
-        organizationId,
-        userId: workosUserId,
-    })
-
-    for (const membership of memberships.data) {
-        await workos.userManagement.deleteOrganizationMembership(membership.id)
-    }
-}
-
-async function deleteWorkOSOrganization(organizationId: string | null) {
-    if (!organizationId) {
-        return
-    }
-
-    try {
-        await getWorkOS().organizations.deleteOrganization(organizationId)
-    } catch (error) {
-        const message = error instanceof Error ? error.message : ''
-        if (!message.toLowerCase().includes('not found')) {
-            throw error
-        }
-    }
 }
 
 async function getLeavePlan(userId: number, householdId: number) {
@@ -136,6 +113,7 @@ export async function linkCurrentHouseholdToWorkOS(formData: FormData) {
     })
 
     await ensureHouseholdInviteToken(household.id)
+    await ensureOnlyWorkOSOrganizationMembership(user.workosUserId, organization.id)
     await refreshSession({ organizationId: organization.id })
     revalidatePath('/')
     redirect('/')
@@ -189,10 +167,10 @@ export async function leaveAndCopyHousehold(formData: FormData) {
         })
         movedToNewHousehold = true
 
+        await ensureOnlyWorkOSOrganizationMembership(user.workosUserId, organization.id)
+
         if (leavePlan.deleteOldHousehold) {
             await deleteWorkOSOrganization(leavePlan.oldWorkOSOrganizationId)
-        } else if (leavePlan.oldWorkOSOrganizationId) {
-            await removeWorkOSOrganizationMembership(leavePlan.oldWorkOSOrganizationId, user.workosUserId)
         }
     } catch (error) {
         if (!movedToNewHousehold) {
@@ -275,6 +253,7 @@ export async function acceptHouseholdInvite(formData: FormData) {
     })
 
     if (currentMembership?.householdId === household.id) {
+        await ensureOnlyWorkOSOrganizationMembership(auth.user.id, household.workosOrganizationId)
         await refreshSession({ organizationId: household.workosOrganizationId })
         revalidatePath('/')
         redirect('/')
@@ -319,10 +298,10 @@ export async function acceptHouseholdInvite(formData: FormData) {
             })
         })
 
+        await ensureOnlyWorkOSOrganizationMembership(auth.user.id, household.workosOrganizationId)
+
         if (leavePlan.deleteOldHousehold) {
             await deleteWorkOSOrganization(leavePlan.oldWorkOSOrganizationId)
-        } else if (leavePlan.oldWorkOSOrganizationId) {
-            await removeWorkOSOrganizationMembership(leavePlan.oldWorkOSOrganizationId, auth.user.id)
         }
     } else {
         await prisma.householdMember.create({
@@ -332,6 +311,8 @@ export async function acceptHouseholdInvite(formData: FormData) {
                 role: HouseholdRole.MEMBER,
             },
         })
+
+        await ensureOnlyWorkOSOrganizationMembership(auth.user.id, household.workosOrganizationId)
     }
 
     await refreshSession({ organizationId: household.workosOrganizationId })
@@ -384,10 +365,6 @@ export async function removeHouseholdMember(formData: FormData) {
     await ensureHouseholdInviteToken(personalHousehold.id)
     await copyMealsAndIngredientsToHousehold(household.id, personalHousehold.id, membership.userId)
 
-    if (household.workosOrganizationId) {
-        await removeWorkOSOrganizationMembership(household.workosOrganizationId, membership.user.workosUserId)
-    }
-
     await prisma.$transaction(async (tx) => {
         await tx.householdMember.delete({
             where: { id: membership.id },
@@ -401,5 +378,6 @@ export async function removeHouseholdMember(formData: FormData) {
         })
     })
 
+    await ensureOnlyWorkOSOrganizationMembership(membership.user.workosUserId, organization.id)
     revalidatePath('/households')
 }

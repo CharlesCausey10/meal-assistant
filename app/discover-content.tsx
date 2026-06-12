@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { copyDiscoveredMeal } from './actions-discover'
 import { Toast } from './components/toast'
@@ -140,20 +141,32 @@ export function DiscoverContent({
                         {sharedMealCount === 0 ? (
                             <>
                                 <h3 className="text-base font-semibold text-app-text">
-                                    No shared meals yet
+                                    Build your meal set first
                                 </h3>
                                 <p className="mt-1 text-sm text-app-muted">
-                                    Meals will appear here after another household opts in to Discover.
+                                    Discover will get more useful as other households share meal templates. For now, add a meal you already make so it can show up in Today and grocery planning.
                                 </p>
+                                <Link
+                                    href="/?tab=meals"
+                                    className="mt-4 inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-contrast hover:bg-primary-hover"
+                                >
+                                    Add a meal
+                                </Link>
                             </>
                         ) : meals.length === 0 && duplicateMealCount === sharedMealCount ? (
                             <>
                                 <h3 className="text-base font-semibold text-app-text">
-                                    No new meals to discover
+                                    Your meal set is caught up
                                 </h3>
                                 <p className="mt-1 text-sm text-app-muted">
-                                    {sharedMealCount} shared meals are available, but this household already has meals with the same names.
+                                    {sharedMealCount} shared meals are available, and this household already has meals with the same names. Add more of your own staples while new ideas arrive.
                                 </p>
+                                <Link
+                                    href="/?tab=meals"
+                                    className="mt-4 inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-contrast hover:bg-primary-hover"
+                                >
+                                    Add a meal
+                                </Link>
                             </>
                         ) : hiddenMealCount > 0 ? (
                             <>
@@ -167,11 +180,17 @@ export function DiscoverContent({
                         ) : (
                             <>
                                 <h3 className="text-base font-semibold text-app-text">
-                                    No suggestions right now
+                                    Start with your own ideas
                                 </h3>
                                 <p className="mt-1 text-sm text-app-muted">
-                                    More meals will appear as households opt in or hidden meals expire.
+                                    More shared meals will appear as households opt in or hidden meals expire. In the meantime, add a meal you want Today to remember.
                                 </p>
+                                <Link
+                                    href="/?tab=meals"
+                                    className="mt-4 inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-contrast hover:bg-primary-hover"
+                                >
+                                    Add a meal
+                                </Link>
                             </>
                         )}
                     </section>

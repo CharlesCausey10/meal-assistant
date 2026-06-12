@@ -24,6 +24,8 @@
   --app-success-soft: var(--app-primary-soft);
   --app-warning: #b88934;
   --app-warning-soft: #f6e8c8;
+  --app-star-filled: #d18a00;
+  --app-star-empty: #ded3c3;
   --app-danger: #a74f45;
   --app-danger-hover: #8d4038;
   --app-danger-soft: #f2d7d1;
@@ -58,6 +60,8 @@
   --color-success-soft: var(--app-success-soft);
   --color-warning: var(--app-warning);
   --color-warning-soft: var(--app-warning-soft);
+  --color-star-filled: var(--app-star-filled);
+  --color-star-empty: var(--app-star-empty);
   --color-danger: var(--app-danger);
   --color-danger-hover: var(--app-danger-hover);
   --color-danger-soft: var(--app-danger-soft);

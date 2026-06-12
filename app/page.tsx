@@ -1,18 +1,20 @@
 import { getAuthenticatedContext } from '@/lib/auth'
+import { measureAsync } from '@/lib/timing'
 import { DashboardTab } from './dashboard-tab'
 import { DiscoverTab } from './discover-tab'
 import { GroceryTab } from './grocery-tab'
 import { IngredientEditTab } from './ingredient-edit-tab'
-import { MealLogTab } from './meal-log-tab'
 import { MealPlannerTab } from './meal-planner-tab'
+import { AccountTab } from './account-tab'
 import { PageLayout } from './components/page-layout'
 
 const LEGACY_TAB_IDS: Record<string, string> = {
     recipes: 'meals',
-    logs: 'leftovers',
+    logs: 'today',
+    leftovers: 'today',
 }
 
-const MAIN_TAB_IDS = ['today', 'meals', 'leftovers', 'grocery', 'discover'] as const
+const MAIN_TAB_IDS = ['today', 'meals', 'grocery', 'discover', 'account'] as const
 type MainTabId = (typeof MAIN_TAB_IDS)[number]
 
 function getActiveTabId(tab: string | undefined): MainTabId {
@@ -34,9 +36,13 @@ export default async function Home({
         hideChecked?: string
     }>
 }) {
-    const authContext = await getAuthenticatedContext()
     const params = await searchParams
     const activeTabId = getActiveTabId(params.tab)
+    const authContext = await measureAsync(
+        'home.auth',
+        () => getAuthenticatedContext(),
+        { tab: params.tab === 'ingredients' ? 'ingredients' : activeTabId }
+    )
 
     // Handle ingredient edit tab separately (not in main navigation)
     if (params.tab === 'ingredients') {
@@ -63,7 +69,7 @@ export default async function Home({
     const tabs = [
         {
             id: 'today',
-            label: '✨ Today',
+            label: 'Today',
             content: activeTabId === 'today' ? (
                 <DashboardTab
                     householdId={authContext.household.id}
@@ -73,7 +79,7 @@ export default async function Home({
         },
         {
             id: 'meals',
-            label: '🍽️ Meals',
+            label: 'Search',
             content: activeTabId === 'meals' ? (
                 <MealPlannerTab
                     searchParams={searchParams}
@@ -83,15 +89,8 @@ export default async function Home({
             ) : null,
         },
         {
-            id: 'leftovers',
-            label: '🧊 Leftovers',
-            content: activeTabId === 'leftovers'
-                ? <MealLogTab householdId={authContext.household.id} />
-                : null,
-        },
-        {
             id: 'grocery',
-            label: '🛒 Grocery',
+            label: 'Grocery',
             content: activeTabId === 'grocery' ? (
                 <GroceryTab
                     searchParams={searchParams}
@@ -110,14 +109,17 @@ export default async function Home({
                 />
             ) : null,
         },
+        {
+            id: 'account',
+            label: 'Account',
+            content: activeTabId === 'account' ? <AccountTab authContext={authContext} /> : null,
+        },
     ]
 
     return (
         <PageLayout
-            title="🍽️ Meal Planner"
+            title="Meal Planner"
             tabs={tabs}
-            userEmail={authContext.user.email}
-            householdName={authContext.household.name}
         />
     )
 }

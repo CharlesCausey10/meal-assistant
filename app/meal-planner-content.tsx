@@ -3,13 +3,9 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { SerializedMealWithIngredients } from './utils/convert-prisma'
-import { Filters } from './filters'
 import { MealList } from './meal-list'
 import { MealForm } from './components/meal-form'
 import { ResponsiveModal } from './components/responsive-modal'
-import { hasMealCategory } from './utils/categories'
-
-const NO_PROTEIN_FILTER = 'NO_PROTEIN'
 
 type MealPlannerContentProps = {
     meals: SerializedMealWithIngredients[]
@@ -23,28 +19,17 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
     const searchParams = useSearchParams()
     const [isNewMealOpen, setIsNewMealOpen] = useState(false)
     const [searchValue, setSearchValue] = useState(searchParams.get('search') || '')
-    const [selectedProteins, setSelectedProteins] = useState<string[]>(
-        searchParams.get('protein')?.split(',').filter(Boolean) || []
-    )
-    const [selectedCategories, setSelectedCategories] = useState<string[]>(
-        searchParams.get('category')?.split(',').filter(Boolean) || []
-    )
 
     const updateQuery = useCallback(
         (
             updates: {
                 search?: string
-                proteins?: string[]
-                categories?: string[]
             },
             mode: 'push' | 'replace' = 'push'
         ) => {
             const params = new URLSearchParams(window.location.search)
 
             const nextSearch = updates.search !== undefined ? updates.search : searchValue
-            const nextProteins = updates.proteins !== undefined ? updates.proteins : selectedProteins
-            const nextCategories =
-                updates.categories !== undefined ? updates.categories : selectedCategories
 
             if (nextSearch.trim() === '') {
                 params.delete('search')
@@ -52,17 +37,8 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
                 params.set('search', nextSearch)
             }
 
-            if (nextProteins.length === 0) {
-                params.delete('protein')
-            } else {
-                params.set('protein', nextProteins.join(','))
-            }
-
-            if (nextCategories.length === 0) {
-                params.delete('category')
-            } else {
-                params.set('category', nextCategories.join(','))
-            }
+            params.delete('protein')
+            params.delete('category')
 
             const nextQuery = params.toString()
             const nextUrl = nextQuery ? `?${nextQuery}` : window.location.pathname
@@ -73,7 +49,7 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
                 window.history.replaceState(null, '', nextUrl)
             }
         },
-        [searchValue, selectedProteins, selectedCategories]
+        [searchValue]
     )
 
     const handleSearchChange = useCallback((nextValue: string) => {
@@ -81,79 +57,45 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
         updateQuery({ search: nextValue }, 'replace')
     }, [updateQuery])
 
-    const handleProteinsChange = useCallback((nextProteins: string[]) => {
-        setSelectedProteins(nextProteins)
-        updateQuery({ proteins: nextProteins }, 'push')
-    }, [updateQuery])
-
-    const handleCategoriesChange = useCallback((nextCategories: string[]) => {
-        setSelectedCategories(nextCategories)
-        updateQuery({ categories: nextCategories }, 'push')
-    }, [updateQuery])
-
-    const isProteinMatch = useCallback(
-        (protein: string | null) => {
-            if (selectedProteins.length === 0) {
-                return true
-            }
-
-            if (protein === null) {
-                return selectedProteins.includes(NO_PROTEIN_FILTER)
-            }
-
-            return selectedProteins.includes(protein)
-        },
-        [selectedProteins]
-    )
-
-    const isCategoryMatch = useCallback(
-        (meal: SerializedMealWithIngredients) => {
-            if (selectedCategories.length === 0) {
-                return true
-            }
-
-            return selectedCategories.some((category) => hasMealCategory(meal, category))
-        },
-        [selectedCategories]
-    )
-
     const filteredMeals = useMemo(() => {
         const normalizedSearch = searchValue.trim().toLowerCase()
         return meals.filter((meal) => {
-            const isSearchMatch =
-                normalizedSearch.length === 0 ||
+            return normalizedSearch.length === 0 ||
                 meal.name.toLowerCase().includes(normalizedSearch)
-
-            return isSearchMatch && isProteinMatch(meal.protein) && isCategoryMatch(meal)
         })
-    }, [meals, searchValue, isProteinMatch, isCategoryMatch])
+    }, [meals, searchValue])
 
     return (
         <div className="h-full flex flex-col md:flex-row">
-            <div className="md:hidden p-3 border-b border-primary/20 flex gap-2">
-                <button
-                    type="button"
-                    disabled={!searchValue}
-                    onClick={() => handleSearchChange('')}
-                    className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors disabled:text-app-subtle/60 disabled:hover:bg-transparent"
-                    aria-label="Clear search"
-                >
-                    ✕
-                </button>
-                <input
-                    type="text"
-                    placeholder="Search meals..."
-                    value={searchValue}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base placeholder-app-subtle"
-                />
-                <button
-                    type="button"
-                    onClick={() => setIsNewMealOpen(true)}
-                    className="bg-linear-to-r from-primary to-primary-hover text-primary-contrast px-3 py-2 rounded-lg font-medium text-xl"
-                >
-                    +
-                </button>
+            <div className="md:hidden border-b border-primary/20 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-app-text">Search meals</h2>
+                    <button
+                        type="button"
+                        onClick={() => setIsNewMealOpen(true)}
+                        className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-contrast hover:bg-primary-hover"
+                    >
+                        Add
+                    </button>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        disabled={!searchValue}
+                        onClick={() => handleSearchChange('')}
+                        className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors disabled:text-app-subtle/60 disabled:hover:bg-transparent"
+                        aria-label="Clear search"
+                    >
+                        X
+                    </button>
+                    <input
+                        type="text"
+                        placeholder="Search by name"
+                        value={searchValue}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base placeholder-app-subtle"
+                    />
+                </div>
             </div>
 
             <div className="hidden md:flex md:w-1/2 md:flex-col md:p-4">
@@ -163,20 +105,33 @@ export function MealPlannerContent({ meals, groceryLists }: MealPlannerContentPr
                 </div>
             </div>
 
-            <div className="flex-1 md:w-1/2 flex flex-col gap-4 p-4 overflow-hidden">
-                {/* <div className="bg-app-surface p-4 rounded-xl border border-primary/30 shrink-0"> */}
-                <Filters
-                    searchValue={searchValue}
-                    onSearchChange={handleSearchChange}
-                    selectedProteins={selectedProteins}
-                    onProteinsChange={handleProteinsChange}
-                    selectedCategories={selectedCategories}
-                    onCategoriesChange={handleCategoriesChange}
-                />
-                {/* </div> */}
+            <div className="flex-1 md:w-1/2 flex flex-col gap-3 p-4 overflow-hidden">
+                <div className="hidden rounded-lg border border-primary/20 bg-app-surface p-3 md:block">
+                    <div className="mb-2">
+                        <h2 className="text-lg font-semibold text-app-text">Search meals</h2>
+                        <p className="text-sm text-app-muted">Find a specific meal by name.</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            disabled={!searchValue}
+                            onClick={() => handleSearchChange('')}
+                            className="text-app-subtle hover:text-app-text/85 hover:bg-app-surface-soft/80 rounded-lg p-2 transition-colors disabled:text-app-subtle/60 disabled:hover:bg-transparent"
+                            aria-label="Clear search"
+                        >
+                            X
+                        </button>
+                        <input
+                            type="text"
+                            placeholder="Search by name"
+                            value={searchValue}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            className="flex-1 border border-app-border focus:border-primary focus:outline-none p-2 rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base placeholder-app-subtle"
+                        />
+                    </div>
+                </div>
                 <div className="flex-1 overflow-y-auto">
                     {filteredMeals.length > 0 ? (
-                        <MealList meals={filteredMeals} groceryLists={groceryLists} />
+                        <MealList meals={filteredMeals} groceryLists={groceryLists} variant="row" />
                     ) : (
                         <div className="h-full grid place-items-center text-app-subtle">
                             {meals.length === 0 ? 'No meals yet.' : 'No meals match your search.'}

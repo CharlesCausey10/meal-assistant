@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { copyGlobalIngredientsToHousehold } from './household-copy'
 import { prisma } from './prisma'
 import { ensureHouseholdInviteToken } from './household-invites'
+import { ensureOnlyWorkOSOrganizationMembership } from './workos-memberships'
 
 export type AuthenticatedContext = {
     user: {
@@ -171,6 +172,7 @@ async function createFirstHouseholdForUser(workosUser: WorkOSUser): Promise<Auth
 
     await ensureHouseholdInviteToken(household.id)
     await copyGlobalIngredientsToHousehold(household.id)
+    await ensureOnlyWorkOSOrganizationMembership(workosUser.id, organization.id)
 
     return {
         user,
@@ -182,24 +184,23 @@ async function createFirstHouseholdForUser(workosUser: WorkOSUser): Promise<Auth
 async function getLocalAuthenticatedContext(
     workosUser: WorkOSUser
 ): Promise<AuthenticatedContext | null> {
-    const user = await prisma.user.findUnique({
-        where: { workosUserId: workosUser.id },
-        include: {
-            memberships: {
-                include: { household: true },
-                orderBy: { id: 'asc' },
-            },
+    const membership = await prisma.householdMember.findFirst({
+        where: {
+            user: { workosUserId: workosUser.id },
         },
+        include: {
+            household: true,
+            user: true,
+        },
+        orderBy: { id: 'asc' },
     })
 
-    const membership = user?.memberships[0]
-
-    if (!user || !membership) {
+    if (!membership) {
         return null
     }
 
     return {
-        user,
+        user: membership.user,
         household: membership.household,
         role: membership.role,
     }
@@ -239,9 +240,33 @@ export async function getAuthenticatedActionContext(): Promise<AuthenticatedCont
         : createFirstHouseholdForUser(user)
 }
 
+export async function getOptionalAuthenticatedContext(): Promise<AuthenticatedContext | null> {
+    const { user, organizationId } = await withAuth()
+
+    if (!user) {
+        return null
+    }
+
+    const localContext = await getLocalAuthenticatedContext(user)
+    if (localContext) {
+        return localContext
+    }
+
+    return organizationId
+        ? syncUserAndMembership(user, organizationId)
+        : createFirstHouseholdForUser(user)
+}
+
 export async function syncAuthenticatedUser(
     user: WorkOSUser,
     organizationId?: string
 ): Promise<void> {
-    await syncUserAndMembership(user, organizationId)
+    const context = await syncUserAndMembership(user, organizationId)
+
+    if (context.household.workosOrganizationId) {
+        await ensureOnlyWorkOSOrganizationMembership(
+            user.id,
+            context.household.workosOrganizationId
+        )
+    }
 }

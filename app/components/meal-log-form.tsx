@@ -4,6 +4,7 @@ import { logMeal } from '@/app/actions-meal-log'
 import { FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { CookingAnimation } from './cooking-animation'
+import { PROTEIN_OPTIONS } from '../utils/protein'
 
 interface MealLogFormProps {
     defaultName?: string
@@ -25,14 +26,11 @@ export function MealLogForm({
         e.preventDefault()
         const form = e.currentTarget
         const formData = new FormData(form)
-        
+
         await logMeal(formData)
         router.refresh()
-        
-        if (onSuccess) {
-            onSuccess()
-        }
-        // Reset form
+
+        onSuccess?.()
         form.reset()
     }
 
@@ -41,34 +39,32 @@ export function MealLogForm({
             {mealId !== undefined && (
                 <input type="hidden" name="mealId" value={mealId} />
             )}
-            <input 
-                name="name" 
-                placeholder="Meal name" 
+            <input
+                name="name"
+                placeholder="Meal name"
                 defaultValue={defaultName}
-                className="border border-app-border focus:border-primary focus:outline-none p-3 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle" 
-                required 
+                className="border border-app-border focus:border-primary focus:outline-none p-3 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text placeholder-app-subtle"
+                required
             />
             <div className="grid grid-cols-2 gap-3">
-                <select 
-                    name="protein" 
+                <select
+                    name="protein"
                     defaultValue={defaultProtein}
                     className="border border-app-border focus:border-primary focus:outline-none p-3 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text"
                 >
                     <option value="">Protein (optional)</option>
-                    <option value="CHICKEN_BREAST">🐔 Chicken Breast</option>
-                    <option value="CHICKEN_THIGHS">🐔 Chicken Thighs</option>
-                    <option value="ROTISSERIE_CHICKEN">🐔 Rotisserie Chicken</option>
-                    <option value="GROUND_BEEF">🐄 Ground Beef</option>
-                    <option value="PORK_BUTT">🐷 Pork Butt</option>
-                    <option value="FISH">🐟 Fish</option>
-                    <option value="EGGS">🥚 Eggs</option>
+                    {PROTEIN_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
                 </select>
-                <input 
-                    name="cookedAt" 
-                    type="date" 
+                <input
+                    name="cookedAt"
+                    type="date"
                     defaultValue={today}
-                    className="border border-app-border focus:border-primary focus:outline-none p-3 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text" 
-                    required 
+                    className="border border-app-border focus:border-primary focus:outline-none p-3 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text"
+                    required
                 />
             </div>
             <button type="submit" className="bg-linear-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary-hover text-primary-contrast px-6 py-3 rounded-lg font-medium transition-all shadow-md hover:shadow-primary/20 w-full">

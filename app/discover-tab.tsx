@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { measureAsync } from '@/lib/timing'
 import { DiscoverContent, type DiscoverMeal } from './discover-content'
 
 export async function DiscoverTab({
@@ -8,42 +9,54 @@ export async function DiscoverTab({
     householdId: number
     userId: number
 }) {
-    const [discoverMeals, householdMeals] = await Promise.all([
-        prisma.meal.findMany({
-            where: {
-                householdId: { not: null },
-                household: {
-                    discoverableMealsOptIn: true,
-                    id: { not: householdId },
+    const [discoverMeals, householdMeals] = await measureAsync(
+        'tab.discover.queries',
+        () => Promise.all([
+            prisma.meal.findMany({
+                where: {
+                    householdId: { not: null },
+                    household: {
+                        discoverableMealsOptIn: true,
+                        id: { not: householdId },
+                    },
                 },
-            },
-            include: {
-                ingredients: {
-                    include: {
-                        ingredient: {
-                            select: {
-                                id: true,
-                                name: true,
+                select: {
+                    id: true,
+                    name: true,
+                    protein: true,
+                    category: true,
+                    recipeUrl: true,
+                    ingredients: {
+                        select: {
+                            id: true,
+                            quantity: true,
+                            unit: true,
+                            ingredient: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                },
                             },
                         },
+                        orderBy: { id: 'asc' },
                     },
-                    orderBy: { id: 'asc' },
+                    categories: {
+                        select: { category: true },
+                        orderBy: { id: 'asc' },
+                    },
                 },
-                categories: {
-                    select: { category: true },
-                    orderBy: { id: 'asc' },
-                },
-            },
-            orderBy: [
-                { updatedAt: 'desc' },
-                { createdAt: 'desc' },
-            ],
-        }),
-        prisma.meal.findMany({
-            where: { householdId },
-            select: { name: true },
-        }),
-    ])
+                orderBy: [
+                    { updatedAt: 'desc' },
+                    { createdAt: 'desc' },
+                ],
+            }),
+            prisma.meal.findMany({
+                where: { householdId },
+                select: { name: true },
+            }),
+        ]),
+        { tab: 'discover' }
+    )
 
     const householdMealNames = new Set(
         householdMeals.map((meal) => meal.name.trim().toLowerCase())

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { measureAsync } from '@/lib/timing'
 import { IngredientEditContent } from './components/ingredient-edit-content'
 import type { IngredientCategory } from '@prisma/client'
 
@@ -22,10 +23,14 @@ const INGREDIENT_CATEGORIES: IngredientCategory[] = [
 ]
 
 export async function IngredientEditTab({ householdId }: { householdId: number }) {
-    const ingredients = await prisma.ingredient.findMany({
-        where: { householdId },
-        orderBy: [{ category: 'asc' }, { name: 'asc' }],
-    })
+    const ingredients = await measureAsync(
+        'tab.ingredients.queries',
+        () => prisma.ingredient.findMany({
+            where: { householdId },
+            orderBy: [{ category: 'asc' }, { name: 'asc' }],
+        }),
+        { tab: 'ingredients' }
+    )
 
     return (
         <div className="h-full flex flex-col overflow-hidden">
