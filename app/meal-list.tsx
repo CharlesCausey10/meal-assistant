@@ -33,6 +33,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
     const [loggingMealId, setLoggingMealId] = useState<number | null>(null)
     const [addingToListMealId, setAddingToListMealId] = useState<number | null>(null)
     const [toastMessage, setToastMessage] = useState<string | null>(null)
+    const [editErrorMessage, setEditErrorMessage] = useState<string | null>(null)
     const [editingIngredients, setEditingIngredients] = useState<IngredientWithQuantity[]>([])
     const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set())
 
@@ -88,8 +89,14 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                 const form = e.currentTarget
                                 const formData = new FormData(form)
                                 formData.append('ingredients', JSON.stringify(editingIngredients))
-                                updateMeal(formData).then(() => {
+                                updateMeal(formData).then((result) => {
+                                    if (!result.ok) {
+                                        setEditErrorMessage(result.error ?? 'Could not save this meal.')
+                                        return
+                                    }
+
                                     setEditingId(null)
+                                    setEditErrorMessage(null)
                                     setEditingIngredients([])
                                 })
                             }} className="space-y-3">
@@ -101,6 +108,11 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                     className="border border-app-border focus:border-primary focus:outline-none p-2 w-full rounded-lg transition-colors bg-app-surface-raised/90 text-app-text text-base"
                                     required
                                 />
+                                {editErrorMessage ? (
+                                    <div className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-semibold text-danger">
+                                        {editErrorMessage}
+                                    </div>
+                                ) : null}
                                 <input
                                     name="recipeUrl"
                                     defaultValue={meal.recipeUrl || ''}
@@ -148,6 +160,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                         type="button"
                                         onClick={() => {
                                             setEditingId(null)
+                                            setEditErrorMessage(null)
                                             setEditingIngredients([])
                                         }}
                                         className="bg-app-surface-soft hover:bg-app-border-strong text-app-text/85 px-4 py-2 rounded-lg text-sm font-medium transition-all"
@@ -185,6 +198,7 @@ export function MealList({ meals, groceryLists }: MealListProps) {
                                         <button
                                             onClick={() => {
                                                 setEditingId(meal.id)
+                                                setEditErrorMessage(null)
                                                 setEditingIngredients(
                                                     meal.ingredients.map(ing => ({
                                                         ...ing.ingredient,

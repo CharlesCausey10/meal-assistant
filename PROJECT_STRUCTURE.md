@@ -95,7 +95,7 @@ Models:
 - `User`: local user profile linked to a WorkOS user ID, with household memberships and per-user meal preferences.
 - `Household`: local household/workspace linked to an optional WorkOS organization ID; owns meals, ingredients, logs, grocery lists, one active app-level invite token, and nullable Discover sharing consent.
 - `HouseholdMember`: join table between users and households with an owner/member role.
-- `Meal`: meal template with optional household ownership, a legacy/primary `category`, multi-category `MealCategory` tags, optional protein, notes, recipe URL, ingredients, grocery-list uses, logs, and per-user preferences. Normal user-facing meals should be household-owned; new households start with no default meals and add meals manually or copy them from Discover.
+- `Meal`: meal template with optional household ownership, a legacy/primary `category`, multi-category `MealCategory` tags, optional protein, notes, recipe URL, ingredients, grocery-list uses, logs, and per-user preferences. Normal user-facing meals should be household-owned; new households start with no default meals and add meals manually or copy them from Discover. Meal names are unique per household after trimming and case-folding, enforced by raw SQL partial expression indexes in `prisma/migrations/20260612100000_unique_meal_names_per_household/`.
 - `MealCategory`: meal-window tag join table that lets one meal appear in multiple categories such as both lunch and dinner. Existing `Meal.category` is still retained as a primary/backward-compatible category until duplicate meal cleanup and eventual simplification.
 - `MealPreference`: per-user 1-10 preference score for a meal. Existing scores were migrated here from the removed `Meal.preference` column.
 - `Ingredient`: reusable ingredient catalog entry with optional household ownership (`householdId = null` means global default/template), name, and category.
@@ -181,6 +181,7 @@ Server actions mutate the database and usually call `revalidatePath('/')` afterw
   - `deleteMeal(formData)`
   - Parses JSON-encoded ingredients from the meal form and writes nested `MealIngredient` rows.
   - Parses selected meal-window categories, stores the first as `Meal.category`, and writes all selected windows to `MealCategory`.
+  - Returns user-readable duplicate-name validation errors for create/edit attempts that would violate household meal-name uniqueness.
 
 - `app/actions-meal-log.ts`
   - `logMeal(formData)`

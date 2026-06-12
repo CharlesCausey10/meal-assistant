@@ -353,6 +353,16 @@
         Discover, grocery, and copy flows to preserve and use multiple meal-window tags. The legacy
         <code>Meal.category</code> column remains as the primary/backward-compatible category.
       </div>
+      <div class="note">
+        <strong>Meal-name uniqueness applied:</strong> on June 12, 2026, migration
+        <code>20260612100000_unique_meal_names_per_household</code> added raw SQL partial expression indexes
+        that enforce unique meal names per household after <code>lower(trim(name))</code> normalization, plus
+        the same normalization for global meals where <code>householdId IS NULL</code>. The migration required
+        deleting one duplicate <code>bbq chicken</code> row and one duplicate <code>nutella toast</code> row
+        from the shared production-backed database after the owner approved deleting either duplicate record.
+        Meal create/edit actions now return a friendly inline error instead of surfacing a Prisma unique
+        constraint exception.
+      </div>
     </section>
 
     <section>
@@ -714,7 +724,7 @@ ADD CONSTRAINT meal_preference_score_check CHECK ("score" BETWEEN 1 AND 10);</co
         <div class="card">
           <h3>Meals</h3>
           <p>Normal app views should query only <code>Meal</code> rows for the current household.</p>
-          <p>Starter selection should query only global meals where <code>householdId IS NULL</code>.</p>
+          <p>There is no starter meal picker; global meals are not used for onboarding.</p>
         </div>
         <div class="card">
           <h3>Ingredients</h3>
@@ -752,7 +762,7 @@ ADD CONSTRAINT meal_preference_score_check CHECK ("score" BETWEEN 1 AND 10);</co
         <li>Migrate existing <code>Meal.preference</code> values into <code>MealPreference</code> for the initial owner user.</li>
         <li>Remove <code>Meal.preference</code> from Prisma schema and app code.</li>
         <li>Create or maintain seed data for global ingredients with <code>householdId = null</code>. Do not seed global starter meals for onboarding.</li>
-        <li>Add SQL partial unique indexes for global and household names.</li>
+        <li>Add SQL partial unique indexes for global and household meal names.</li>
         <li>Update server queries to require current household context.</li>
         <li>Update server actions to enforce current household access.</li>
         <li>Update ingredient autocomplete/API routes for household-owned ingredients.</li>
@@ -793,6 +803,7 @@ ADD CONSTRAINT meal_preference_score_check CHECK ("score" BETWEEN 1 AND 10);</co
         <li>Confirm global ingredients are copied to the household.</li>
         <li>Confirm a new household starts with copied ingredients but no default meals.</li>
         <li>Create/edit/delete a household meal.</li>
+        <li>Try creating or renaming a meal to a duplicate household name with different casing or surrounding spaces and confirm the UI shows a friendly inline error.</li>
         <li>Add/update 1-10 meal preferences for one user.</li>
         <li>Confirm another household member can see shared meals/logs/grocery lists.</li>
         <li>Confirm another household member can have different meal preferences.</li>
@@ -817,10 +828,6 @@ ADD CONSTRAINT meal_preference_score_check CHECK ("score" BETWEEN 1 AND 10);</co
     <section>
       <h2>Next Steps</h2>
       <ul>
-        <li>
-          Merge or rename duplicate household meals now that one meal can be tagged for multiple meal windows.
-          After duplicates are cleaned up, enforce unique meal names within each household.
-        </li>
         <li>
           Improve Discover ranking after more real households exist. The first implementation uses recent meal
           updates plus a browser-local 30-day seen cache; future ranking could consider category variety, copied
